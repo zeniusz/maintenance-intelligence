@@ -99,16 +99,12 @@ See [docs/data_dictionary.md](docs/data_dictionary.md) and [docs/architecture.md
 - **A synthetic fallback for weather**, so the project never fails to start.
 - **Reported against a simple rule**, so the value of the model is measured, not assumed.
 
-## How it could be developed further
-
-1. **Real data:** connect a historian or CMMS (for example PI, SAP PM) instead of the generator; the pipeline only needs the CSV schema in the data dictionary.
-2. **Failure prediction:** with real failure labels, add survival analysis or gradient boosting for time-to-failure and report calibrated probabilities.
-3. **Better detectors:** compare against autoencoders or LSTM models on subtle multi-sensor patterns, per-asset-type models, and a proper validation window to tune the alert threshold.
-4. **Learned risk weights:** fit the score weights from maintenance outcomes instead of fixed expert weights.
-5. **Actions:** recommended actions, due dates and work-order creation once the maintenance system provides them (they are intentionally not invented here).
-6. **Operations:** scheduled refresh, alert notifications, user roles, Docker deployment, drift monitoring, and a feedback button so technicians can mark alerts as false positives.
-7. **Product polish:** drill-through from table rows to asset pages, a narrow-screen filter drawer, and an offline-first PWA for field use.
-
+## Next steps
+1. **Ask-the-data assistant (chatbot):** a chat box in the dashboard where a technician asks in plain language, e.g. *"Which pumps at Baltic Terminal got worse this week?"* or *"Why is A013 ranked first?"*. An LLM turns the question into a safe, read-only database query (or calls fixed tools such as `top_risks()` and `asset_history()`), runs it on the real database, and answers with the numbers and a link to the chart. Answers must come from query results, never from guessing, and are shown with the query used.
+2. **Real database and data:** move from CSV files to a database (PostgreSQL or a time-series store) fed by the plant historian or maintenance system.
+3. **Failure prediction:** with real failure records, add time-to-failure models and calibrated probabilities.
+4. **Better models:** compare autoencoders or per-asset-type models, using a proper validation window.
+5. **Operations:** scheduled refresh, alert notifications, Docker deployment, and a button to mark an alert as a false alarm so the system learns from it.
 ## Limitations
 
 Synthetic faults are cleaner than real ones. There is one model for the whole fleet. The alert quantile was chosen on the test period, so scores are slightly optimistic (a real project would use a separate validation window). Score weights are heuristics, not learned.
