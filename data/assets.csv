@@ -1,0 +1,101 @@
+asset_id,asset_name,facility_id,asset_type,criticality,install_year
+A001,Centrifugal Pump A001,F1,Centrifugal Pump,5,2011
+A002,Heat Exchanger Fan A002,F1,Heat Exchanger Fan,1,2021
+A003,Heat Exchanger Fan A003,F1,Heat Exchanger Fan,5,2013
+A004,Electric Motor A004,F1,Electric Motor,1,2017
+A005,Electric Motor A005,F1,Electric Motor,4,2013
+A006,Gas Turbine A006,F1,Gas Turbine,4,2009
+A007,Centrifugal Pump A007,F1,Centrifugal Pump,4,2018
+A008,Heat Exchanger Fan A008,F1,Heat Exchanger Fan,4,2022
+A009,Compressor A009,F1,Compressor,3,2009
+A010,Centrifugal Pump A010,F1,Centrifugal Pump,4,2019
+A011,Electric Motor A011,F1,Electric Motor,2,2009
+A012,Gas Turbine A012,F1,Gas Turbine,4,2017
+A013,Heat Exchanger Fan A013,F1,Heat Exchanger Fan,3,2019
+A014,Heat Exchanger Fan A014,F1,Heat Exchanger Fan,3,2013
+A015,Heat Exchanger Fan A015,F1,Heat Exchanger Fan,3,2018
+A016,Heat Exchanger Fan A016,F1,Heat Exchanger Fan,3,2009
+A017,Electric Motor A017,F1,Electric Motor,1,2006
+A018,Centrifugal Pump A018,F1,Centrifugal Pump,1,2006
+A019,Gas Turbine A019,F1,Gas Turbine,2,2013
+A020,Electric Motor A020,F1,Electric Motor,1,2021
+A021,Electric Motor A021,F2,Electric Motor,3,2007
+A022,Compressor A022,F2,Compressor,4,2013
+A023,Centrifugal Pump A023,F2,Centrifugal Pump,4,2017
+A024,Gas Turbine A024,F2,Gas Turbine,3,2008
+A025,Heat Exchanger Fan A025,F2,Heat Exchanger Fan,5,2017
+A026,Heat Exchanger Fan A026,F2,Heat Exchanger Fan,3,2010
+A027,Electric Motor A027,F2,Electric Motor,1,2019
+A028,Gas Turbine A028,F2,Gas Turbine,4,2015
+A029,Electric Motor A029,F2,Electric Motor,3,2014
+A030,Electric Motor A030,F2,Electric Motor,4,2008
+A031,Electric Motor A031,F2,Electric Motor,3,2013
+A032,Compressor A032,F2,Compressor,3,2020
+A033,Centrifugal Pump A033,F2,Centrifugal Pump,1,2005
+A034,Electric Motor A034,F2,Electric Motor,3,2018
+A035,Gas Turbine A035,F2,Gas Turbine,4,2013
+A036,Centrifugal Pump A036,F2,Centrifugal Pump,2,2017
+A037,Gas Turbine A037,F2,Gas Turbine,4,2016
+A038,Gas Turbine A038,F2,Gas Turbine,1,2012
+A039,Compressor A039,F2,Compressor,2,2010
+A040,Heat Exchanger Fan A040,F2,Heat Exchanger Fan,3,2016
+A041,Centrifugal Pump A041,F3,Centrifugal Pump,5,2007
+A042,Heat Exchanger Fan A042,F3,Heat Exchanger Fan,2,2015
+A043,Heat Exchanger Fan A043,F3,Heat Exchanger Fan,2,2006
+A044,Compressor A044,F3,Compressor,3,2016
+A045,Centrifugal Pump A045,F3,Centrifugal Pump,5,2016
+A046,Gas Turbine A046,F3,Gas Turbine,5,2006
+A047,Electric Motor A047,F3,Electric Motor,1,2018
+A048,Gas Turbine A048,F3,Gas Turbine,2,2012
+A049,Heat Exchanger Fan A049,F3,Heat Exchanger Fan,5,2019
+A050,Heat Exchanger Fan A050,F3,Heat Exchanger Fan,1,2005
+A051,Heat Exchanger Fan A051,F3,Heat Exchanger Fan,5,2008
+A052,Centrifugal Pump A052,F3,Centrifugal Pump,2,2013
+A053,Compressor A053,F3,Compressor,5,2008
+A054,Electric Motor A054,F3,Electric Motor,2,2010
+A055,Electric Motor A055,F3,Electric Motor,3,2016
+A056,Centrifugal Pump A056,F3,Centrifugal Pump,4,2007
+A057,Electric Motor A057,F3,Electric Motor,1,2017
+A058,Centrifugal Pump A058,F3,Centrifugal Pump,3,2006
+A059,Heat Exchanger Fan A059,F3,Heat Exchanger Fan,3,2008
+A060,Heat Exchanger Fan A060,F3,Heat Exchanger Fan,4,2015
+A061,Gas Turbine A061,F4,Gas Turbine,5,2019
+A062,Heat Exchanger Fan A062,F4,Heat Exchanger Fan,4,2008
+A063,Compressor A063,F4,Compressor,3,2010
+A064,Gas Turbine A064,F4,Gas Turbine,3,2021
+A065,Electric Motor A065,F4,Electric Motor,3,2022
+A066,Compressor A066,F4,Compressor,5,2015
+A067,Gas Turbine A067,F4,Gas Turbine,2,2013
+A068,Compressor A068,F4,Compressor,1,2011
+A069,Centrifugal Pump A069,F4,Centrifugal Pump,2,2016
+A070,Electric Motor A070,F4,Electric Motor,1,2015
+A071,Heat Exchanger Fan A071,F4,Heat Exchanger Fan,1,2010
+A072,Centrifugal Pump A072,F4,Centrifugal Pump,1,2005
+A073,Electric Motor A073,F4,Electric Motor,4,2007
+A074,Centrifugal Pump A074,F4,Centrifugal Pump,4,2022
+A075,Heat Exchanger Fan A075,F4,Heat Exchanger Fan,4,2012
+A076,Electric Motor A076,F4,Electric Motor,3,2013
+A077,Compressor A077,F4,Compressor,4,2013
+A078,Compressor A078,F4,Compressor,1,2019
+A079,Electric Motor A079,F4,Electric Motor,5,2006
+A080,Heat Exchanger Fan A080,F4,Heat Exchanger Fan,3,2006
+A081,Gas Turbine A081,F5,Gas Turbine,5,2009
+A082,Electric Motor A082,F5,Electric Motor,1,2013
+A083,Centrifugal Pump A083,F5,Centrifugal Pump,3,2017
+A084,Gas Turbine A084,F5,Gas Turbine,4,2013
+A085,Heat Exchanger Fan A085,F5,Heat Exchanger Fan,3,2012
+A086,Heat Exchanger Fan A086,F5,Heat Exchanger Fan,3,2021
+A087,Centrifugal Pump A087,F5,Centrifugal Pump,1,2007
+A088,Compressor A088,F5,Compressor,2,2015
+A089,Heat Exchanger Fan A089,F5,Heat Exchanger Fan,2,2014
+A090,Gas Turbine A090,F5,Gas Turbine,2,2013
+A091,Electric Motor A091,F5,Electric Motor,4,2019
+A092,Gas Turbine A092,F5,Gas Turbine,4,2009
+A093,Gas Turbine A093,F5,Gas Turbine,4,2022
+A094,Compressor A094,F5,Compressor,2,2010
+A095,Gas Turbine A095,F5,Gas Turbine,5,2014
+A096,Compressor A096,F5,Compressor,1,2014
+A097,Compressor A097,F5,Compressor,2,2020
+A098,Heat Exchanger Fan A098,F5,Heat Exchanger Fan,1,2012
+A099,Heat Exchanger Fan A099,F5,Heat Exchanger Fan,2,2010
+A100,Centrifugal Pump A100,F5,Centrifugal Pump,5,2005

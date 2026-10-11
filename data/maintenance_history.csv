@@ -1,0 +1,333 @@
+event_id,asset_id,date,type,downtime_hours,cost_eur,description
+0,A001,2024-05-05 00:00:00,preventive,2,1352,Scheduled inspection and lubrication
+1,A001,2024-08-14 00:00:00,preventive,4,1487,Scheduled inspection and lubrication
+2,A001,2024-08-27 00:00:00,preventive,8,1003,Scheduled inspection and lubrication
+3,A001,2024-10-13 00:00:00,preventive,4,1988,Scheduled inspection and lubrication
+4,A001,2025-04-15 19:00:00,corrective,30,53381,Failure after overheating
+5,A002,2025-03-02 00:00:00,preventive,3,787,Scheduled inspection and lubrication
+6,A002,2025-03-05 00:00:00,preventive,6,1661,Scheduled inspection and lubrication
+7,A003,2024-04-22 00:00:00,preventive,5,951,Scheduled inspection and lubrication
+8,A003,2024-07-16 00:00:00,preventive,8,1500,Scheduled inspection and lubrication
+9,A004,2025-03-10 00:00:00,preventive,2,1283,Scheduled inspection and lubrication
+10,A004,2025-03-28 00:00:00,preventive,5,936,Scheduled inspection and lubrication
+11,A005,2024-08-05 00:00:00,preventive,4,1777,Scheduled inspection and lubrication
+12,A005,2024-09-07 00:00:00,preventive,5,1000,Scheduled inspection and lubrication
+13,A005,2024-11-29 00:00:00,preventive,6,1731,Scheduled inspection and lubrication
+14,A005,2025-06-04 00:00:00,preventive,6,1515,Scheduled inspection and lubrication
+15,A006,2024-03-15 00:00:00,preventive,3,1452,Scheduled inspection and lubrication
+16,A006,2024-09-09 00:00:00,preventive,4,1953,Scheduled inspection and lubrication
+17,A006,2024-09-27 00:00:00,preventive,6,777,Scheduled inspection and lubrication
+18,A006,2025-01-26 00:00:00,preventive,5,850,Scheduled inspection and lubrication
+19,A006,2025-04-21 20:00:00,corrective,8,34961,Failure after overheating
+20,A006,2025-05-12 23:00:00,corrective,11,26365,Failure after overheating
+21,A007,2024-03-23 00:00:00,preventive,7,759,Scheduled inspection and lubrication
+22,A007,2024-06-28 00:00:00,preventive,4,1760,Scheduled inspection and lubrication
+23,A007,2024-08-01 00:00:00,preventive,5,1755,Scheduled inspection and lubrication
+24,A007,2025-02-13 00:00:00,preventive,5,1649,Scheduled inspection and lubrication
+25,A007,2025-03-14 08:00:00,corrective,51,30454,Failure after pressure_loss
+26,A008,2024-03-23 00:00:00,preventive,5,1867,Scheduled inspection and lubrication
+27,A008,2024-04-30 00:00:00,preventive,4,1222,Scheduled inspection and lubrication
+28,A009,2024-04-14 00:00:00,preventive,5,2015,Scheduled inspection and lubrication
+29,A009,2025-03-10 00:00:00,preventive,4,1124,Scheduled inspection and lubrication
+30,A009,2025-03-17 00:00:00,preventive,7,1354,Scheduled inspection and lubrication
+31,A010,2024-08-25 00:00:00,preventive,2,1753,Scheduled inspection and lubrication
+32,A010,2025-04-03 00:00:00,preventive,4,2158,Scheduled inspection and lubrication
+33,A011,2024-10-23 00:00:00,preventive,3,777,Scheduled inspection and lubrication
+34,A011,2024-11-26 00:00:00,preventive,4,1620,Scheduled inspection and lubrication
+35,A011,2025-03-28 00:00:00,preventive,6,1232,Scheduled inspection and lubrication
+36,A011,2025-05-27 00:00:00,preventive,5,1520,Scheduled inspection and lubrication
+37,A011,2025-06-11 22:00:00,corrective,56,17219,Failure after power_surge
+38,A012,2024-08-09 00:00:00,preventive,7,917,Scheduled inspection and lubrication
+39,A012,2024-08-18 00:00:00,preventive,6,1027,Scheduled inspection and lubrication
+40,A012,2024-09-19 00:00:00,preventive,7,1190,Scheduled inspection and lubrication
+41,A012,2025-06-24 00:00:00,preventive,7,830,Scheduled inspection and lubrication
+42,A013,2024-07-23 00:00:00,preventive,4,1535,Scheduled inspection and lubrication
+43,A013,2024-10-23 00:00:00,preventive,7,1586,Scheduled inspection and lubrication
+44,A013,2024-12-08 00:00:00,preventive,2,1148,Scheduled inspection and lubrication
+45,A013,2025-01-19 21:00:00,corrective,70,14509,Failure after overheating
+46,A014,2024-07-31 00:00:00,preventive,7,2011,Scheduled inspection and lubrication
+47,A014,2025-03-30 00:00:00,preventive,8,1155,Scheduled inspection and lubrication
+48,A015,2024-05-13 00:00:00,preventive,7,1849,Scheduled inspection and lubrication
+49,A015,2025-03-24 01:00:00,corrective,28,22424,Failure after power_surge
+50,A015,2025-05-27 00:00:00,preventive,6,1255,Scheduled inspection and lubrication
+51,A016,2024-10-27 00:00:00,preventive,4,2085,Scheduled inspection and lubrication
+52,A016,2024-11-17 00:00:00,preventive,4,1638,Scheduled inspection and lubrication
+53,A016,2025-01-14 00:00:00,preventive,6,1369,Scheduled inspection and lubrication
+54,A017,2025-04-03 00:00:00,preventive,8,1652,Scheduled inspection and lubrication
+55,A017,2025-04-18 00:00:00,preventive,4,912,Scheduled inspection and lubrication
+56,A018,2024-04-16 00:00:00,preventive,3,1251,Scheduled inspection and lubrication
+57,A018,2024-08-17 00:00:00,preventive,3,847,Scheduled inspection and lubrication
+58,A018,2025-01-21 14:00:00,corrective,8,9760,Failure after bearing_wear
+59,A018,2025-01-23 00:00:00,preventive,2,961,Scheduled inspection and lubrication
+60,A018,2025-03-20 00:00:00,preventive,4,1839,Scheduled inspection and lubrication
+61,A019,2024-06-05 00:00:00,preventive,8,1764,Scheduled inspection and lubrication
+62,A019,2024-11-07 00:00:00,preventive,5,2027,Scheduled inspection and lubrication
+63,A019,2024-12-22 00:00:00,preventive,8,1270,Scheduled inspection and lubrication
+64,A019,2025-02-13 00:00:00,preventive,5,931,Scheduled inspection and lubrication
+65,A020,2024-05-22 00:00:00,preventive,3,1144,Scheduled inspection and lubrication
+66,A020,2025-01-17 00:00:00,preventive,2,2199,Scheduled inspection and lubrication
+67,A020,2025-01-26 07:00:00,corrective,8,7799,Failure after bearing_wear
+68,A020,2025-03-25 00:00:00,preventive,8,1509,Scheduled inspection and lubrication
+69,A021,2024-06-11 00:00:00,preventive,7,1565,Scheduled inspection and lubrication
+70,A021,2024-09-16 00:00:00,preventive,7,1053,Scheduled inspection and lubrication
+71,A022,2024-08-25 00:00:00,preventive,6,1073,Scheduled inspection and lubrication
+72,A022,2024-08-30 00:00:00,preventive,6,1679,Scheduled inspection and lubrication
+73,A022,2024-10-20 00:00:00,preventive,4,1701,Scheduled inspection and lubrication
+74,A022,2025-03-02 00:00:00,preventive,8,1766,Scheduled inspection and lubrication
+75,A023,2024-03-24 00:00:00,preventive,2,1221,Scheduled inspection and lubrication
+76,A023,2025-03-16 00:00:00,preventive,3,1309,Scheduled inspection and lubrication
+77,A023,2025-05-29 00:00:00,preventive,3,1050,Scheduled inspection and lubrication
+78,A024,2024-08-25 00:00:00,preventive,4,1505,Scheduled inspection and lubrication
+79,A024,2025-02-27 00:00:00,corrective,47,34900,Failure after bearing_wear
+80,A024,2025-06-30 00:00:00,preventive,8,1693,Scheduled inspection and lubrication
+81,A025,2024-06-25 00:00:00,preventive,6,1025,Scheduled inspection and lubrication
+82,A025,2024-09-06 00:00:00,preventive,8,867,Scheduled inspection and lubrication
+83,A025,2025-05-13 00:00:00,preventive,8,2145,Scheduled inspection and lubrication
+84,A026,2024-03-23 00:00:00,preventive,8,1069,Scheduled inspection and lubrication
+85,A026,2024-08-07 00:00:00,preventive,2,2125,Scheduled inspection and lubrication
+86,A026,2025-02-08 00:00:00,preventive,2,828,Scheduled inspection and lubrication
+87,A027,2024-11-07 00:00:00,preventive,4,785,Scheduled inspection and lubrication
+88,A027,2025-01-25 00:00:00,preventive,8,2015,Scheduled inspection and lubrication
+89,A027,2025-01-27 22:00:00,corrective,19,7762,Failure after bearing_wear
+90,A028,2024-04-29 00:00:00,preventive,4,1908,Scheduled inspection and lubrication
+91,A028,2024-11-30 00:00:00,preventive,3,1991,Scheduled inspection and lubrication
+92,A028,2025-04-16 00:00:00,preventive,8,1813,Scheduled inspection and lubrication
+93,A029,2024-05-22 00:00:00,preventive,5,1249,Scheduled inspection and lubrication
+94,A029,2024-06-21 00:00:00,preventive,5,1688,Scheduled inspection and lubrication
+95,A029,2024-09-08 00:00:00,preventive,2,2180,Scheduled inspection and lubrication
+96,A029,2025-02-15 00:00:00,preventive,3,889,Scheduled inspection and lubrication
+97,A029,2025-04-12 13:00:00,corrective,71,12127,Failure after pressure_loss
+98,A030,2024-08-08 00:00:00,preventive,7,1657,Scheduled inspection and lubrication
+99,A030,2024-10-05 00:00:00,preventive,4,1159,Scheduled inspection and lubrication
+100,A030,2024-11-24 00:00:00,preventive,8,1830,Scheduled inspection and lubrication
+101,A030,2025-05-12 00:00:00,corrective,32,36998,Failure after pressure_loss
+102,A030,2025-06-03 02:00:00,corrective,21,16874,Failure after bearing_wear
+103,A031,2024-06-08 00:00:00,preventive,3,1037,Scheduled inspection and lubrication
+104,A031,2025-02-03 00:00:00,preventive,8,1227,Scheduled inspection and lubrication
+105,A031,2025-02-27 16:00:00,corrective,45,23935,Failure after pressure_loss
+106,A031,2025-03-10 08:00:00,corrective,65,29101,Failure after power_surge
+107,A031,2025-06-11 00:00:00,corrective,59,34917,Failure after power_surge
+108,A032,2024-04-25 00:00:00,preventive,2,1324,Scheduled inspection and lubrication
+109,A032,2024-07-05 00:00:00,preventive,2,1269,Scheduled inspection and lubrication
+110,A032,2024-08-04 00:00:00,preventive,7,954,Scheduled inspection and lubrication
+111,A033,2024-03-31 00:00:00,preventive,5,1344,Scheduled inspection and lubrication
+112,A033,2025-02-04 15:00:00,corrective,38,11335,Failure after bearing_wear
+113,A033,2025-05-04 00:00:00,preventive,8,1925,Scheduled inspection and lubrication
+114,A034,2024-05-06 00:00:00,preventive,4,2226,Scheduled inspection and lubrication
+115,A034,2024-09-27 00:00:00,preventive,3,959,Scheduled inspection and lubrication
+116,A035,2025-03-05 00:00:00,preventive,6,2039,Scheduled inspection and lubrication
+117,A035,2025-04-10 00:00:00,preventive,2,2064,Scheduled inspection and lubrication
+118,A036,2024-07-19 00:00:00,preventive,4,2102,Scheduled inspection and lubrication
+119,A036,2025-04-19 00:00:00,preventive,4,2168,Scheduled inspection and lubrication
+120,A037,2024-05-20 00:00:00,preventive,4,2036,Scheduled inspection and lubrication
+121,A037,2025-03-15 01:00:00,corrective,58,21828,Failure after bearing_wear
+122,A037,2025-04-15 08:00:00,corrective,27,18462,Failure after pressure_loss
+123,A037,2025-05-21 00:00:00,preventive,4,1786,Scheduled inspection and lubrication
+124,A038,2024-04-17 00:00:00,preventive,2,2032,Scheduled inspection and lubrication
+125,A038,2024-09-24 00:00:00,preventive,6,942,Scheduled inspection and lubrication
+126,A038,2025-03-28 00:00:00,preventive,3,1142,Scheduled inspection and lubrication
+127,A039,2024-03-27 00:00:00,preventive,8,2014,Scheduled inspection and lubrication
+128,A039,2025-02-09 00:00:00,preventive,6,2070,Scheduled inspection and lubrication
+129,A039,2025-06-01 13:00:00,corrective,30,18314,Failure after pressure_loss
+130,A040,2024-09-24 00:00:00,preventive,2,1260,Scheduled inspection and lubrication
+131,A040,2025-02-10 00:00:00,preventive,8,1793,Scheduled inspection and lubrication
+132,A041,2024-04-02 00:00:00,preventive,2,1361,Scheduled inspection and lubrication
+133,A041,2024-12-20 00:00:00,preventive,8,1652,Scheduled inspection and lubrication
+134,A041,2025-05-21 00:00:00,preventive,2,1290,Scheduled inspection and lubrication
+135,A042,2024-07-22 00:00:00,preventive,7,2117,Scheduled inspection and lubrication
+136,A042,2025-02-03 00:00:00,preventive,3,1504,Scheduled inspection and lubrication
+137,A042,2025-04-01 00:00:00,preventive,4,2186,Scheduled inspection and lubrication
+138,A043,2024-05-30 00:00:00,preventive,7,1552,Scheduled inspection and lubrication
+139,A043,2024-07-02 00:00:00,preventive,3,990,Scheduled inspection and lubrication
+140,A043,2025-03-31 00:00:00,preventive,2,1671,Scheduled inspection and lubrication
+141,A043,2025-06-15 00:00:00,preventive,7,845,Scheduled inspection and lubrication
+142,A044,2024-10-20 00:00:00,preventive,3,1146,Scheduled inspection and lubrication
+143,A044,2025-04-02 00:00:00,preventive,3,1635,Scheduled inspection and lubrication
+144,A044,2025-05-26 17:00:00,corrective,38,18985,Failure after overheating
+145,A045,2024-07-27 00:00:00,preventive,7,1336,Scheduled inspection and lubrication
+146,A045,2024-09-24 00:00:00,preventive,6,1884,Scheduled inspection and lubrication
+147,A045,2025-01-24 00:00:00,preventive,7,1211,Scheduled inspection and lubrication
+148,A045,2025-02-10 00:00:00,preventive,6,2239,Scheduled inspection and lubrication
+149,A046,2024-04-17 00:00:00,preventive,8,1006,Scheduled inspection and lubrication
+150,A046,2024-06-19 00:00:00,preventive,7,1225,Scheduled inspection and lubrication
+151,A047,2024-10-28 00:00:00,preventive,6,1974,Scheduled inspection and lubrication
+152,A047,2025-01-07 00:00:00,preventive,3,1967,Scheduled inspection and lubrication
+153,A048,2024-08-09 00:00:00,preventive,4,756,Scheduled inspection and lubrication
+154,A048,2024-10-05 00:00:00,preventive,6,895,Scheduled inspection and lubrication
+155,A048,2025-02-08 00:00:00,preventive,6,879,Scheduled inspection and lubrication
+156,A048,2025-05-01 19:00:00,corrective,10,14485,Failure after pressure_loss
+157,A048,2025-06-08 21:00:00,corrective,72,12185,Failure after overheating
+158,A049,2024-04-16 00:00:00,preventive,2,1221,Scheduled inspection and lubrication
+159,A049,2025-03-02 00:00:00,preventive,6,2210,Scheduled inspection and lubrication
+160,A049,2025-05-09 05:00:00,corrective,66,35649,Failure after pressure_loss
+161,A050,2024-07-26 00:00:00,preventive,8,948,Scheduled inspection and lubrication
+162,A050,2024-11-05 00:00:00,preventive,8,1076,Scheduled inspection and lubrication
+163,A050,2025-02-05 00:00:00,preventive,5,2005,Scheduled inspection and lubrication
+164,A051,2024-05-25 00:00:00,preventive,7,1548,Scheduled inspection and lubrication
+165,A051,2024-10-22 00:00:00,preventive,8,1649,Scheduled inspection and lubrication
+166,A052,2024-12-05 00:00:00,preventive,2,1006,Scheduled inspection and lubrication
+167,A052,2025-05-27 00:00:00,preventive,3,1016,Scheduled inspection and lubrication
+168,A052,2025-06-04 00:00:00,preventive,6,2096,Scheduled inspection and lubrication
+169,A053,2024-12-19 00:00:00,preventive,5,1001,Scheduled inspection and lubrication
+170,A053,2025-01-08 00:00:00,preventive,7,1339,Scheduled inspection and lubrication
+171,A053,2025-02-10 00:00:00,preventive,8,1042,Scheduled inspection and lubrication
+172,A053,2025-03-07 00:00:00,preventive,7,2102,Scheduled inspection and lubrication
+173,A054,2024-03-28 00:00:00,preventive,8,1447,Scheduled inspection and lubrication
+174,A054,2024-04-26 00:00:00,preventive,6,2187,Scheduled inspection and lubrication
+175,A054,2024-10-27 00:00:00,preventive,4,1847,Scheduled inspection and lubrication
+176,A054,2025-02-20 23:00:00,corrective,67,16871,Failure after power_surge
+177,A055,2025-01-06 00:00:00,preventive,7,2184,Scheduled inspection and lubrication
+178,A055,2025-03-13 19:00:00,corrective,9,27477,Failure after pressure_loss
+179,A055,2025-04-01 00:00:00,preventive,8,1355,Scheduled inspection and lubrication
+180,A056,2024-05-17 00:00:00,preventive,6,1999,Scheduled inspection and lubrication
+181,A056,2025-01-21 00:00:00,preventive,6,1490,Scheduled inspection and lubrication
+182,A056,2025-03-04 00:00:00,preventive,8,1726,Scheduled inspection and lubrication
+183,A056,2025-05-15 00:00:00,preventive,8,1106,Scheduled inspection and lubrication
+184,A057,2024-07-03 00:00:00,preventive,5,1342,Scheduled inspection and lubrication
+185,A057,2025-01-04 00:00:00,preventive,7,1638,Scheduled inspection and lubrication
+186,A058,2024-04-16 00:00:00,preventive,2,1792,Scheduled inspection and lubrication
+187,A058,2024-11-30 00:00:00,preventive,8,752,Scheduled inspection and lubrication
+188,A058,2025-05-20 00:00:00,preventive,5,1347,Scheduled inspection and lubrication
+189,A059,2024-05-11 00:00:00,preventive,6,1123,Scheduled inspection and lubrication
+190,A059,2024-09-15 00:00:00,preventive,6,1985,Scheduled inspection and lubrication
+191,A059,2025-05-30 00:00:00,preventive,3,1179,Scheduled inspection and lubrication
+192,A059,2025-06-03 00:00:00,preventive,6,1716,Scheduled inspection and lubrication
+193,A060,2025-02-07 00:00:00,preventive,6,1682,Scheduled inspection and lubrication
+194,A060,2025-03-12 00:00:00,preventive,5,2160,Scheduled inspection and lubrication
+195,A060,2025-06-16 03:00:00,corrective,12,44728,Failure after pressure_loss
+196,A061,2024-04-04 00:00:00,preventive,3,1608,Scheduled inspection and lubrication
+197,A061,2024-09-30 00:00:00,preventive,4,1704,Scheduled inspection and lubrication
+198,A061,2025-01-21 19:00:00,corrective,19,42898,Failure after pressure_loss
+199,A061,2025-06-26 13:00:00,corrective,41,59215,Failure after bearing_wear
+200,A062,2024-10-02 00:00:00,preventive,2,1180,Scheduled inspection and lubrication
+201,A062,2024-10-16 00:00:00,preventive,7,1625,Scheduled inspection and lubrication
+202,A062,2025-02-18 00:00:00,preventive,8,1533,Scheduled inspection and lubrication
+203,A062,2025-06-24 00:00:00,preventive,5,1700,Scheduled inspection and lubrication
+204,A063,2024-09-03 00:00:00,preventive,8,1733,Scheduled inspection and lubrication
+205,A063,2024-12-24 00:00:00,preventive,5,1168,Scheduled inspection and lubrication
+206,A063,2025-01-18 00:00:00,preventive,7,1389,Scheduled inspection and lubrication
+207,A064,2024-04-05 00:00:00,preventive,6,1955,Scheduled inspection and lubrication
+208,A064,2024-12-03 00:00:00,preventive,7,1613,Scheduled inspection and lubrication
+209,A065,2024-03-25 00:00:00,preventive,6,1539,Scheduled inspection and lubrication
+210,A065,2024-05-25 00:00:00,preventive,5,1600,Scheduled inspection and lubrication
+211,A065,2024-06-15 00:00:00,preventive,3,1821,Scheduled inspection and lubrication
+212,A065,2024-09-30 00:00:00,preventive,2,1254,Scheduled inspection and lubrication
+213,A065,2025-01-27 10:00:00,corrective,61,29516,Failure after overheating
+214,A066,2024-04-29 00:00:00,preventive,3,1451,Scheduled inspection and lubrication
+215,A066,2024-08-12 00:00:00,preventive,7,1571,Scheduled inspection and lubrication
+216,A066,2025-06-24 00:00:00,preventive,4,1722,Scheduled inspection and lubrication
+217,A067,2024-06-08 00:00:00,preventive,7,1341,Scheduled inspection and lubrication
+218,A067,2024-06-14 00:00:00,preventive,4,1096,Scheduled inspection and lubrication
+219,A067,2024-09-15 00:00:00,preventive,5,2017,Scheduled inspection and lubrication
+220,A067,2025-03-20 00:00:00,preventive,7,2248,Scheduled inspection and lubrication
+221,A068,2024-04-26 00:00:00,preventive,3,2184,Scheduled inspection and lubrication
+222,A068,2024-09-28 00:00:00,preventive,8,1558,Scheduled inspection and lubrication
+223,A068,2025-06-17 00:00:00,preventive,4,1520,Scheduled inspection and lubrication
+224,A069,2024-09-28 00:00:00,preventive,2,1486,Scheduled inspection and lubrication
+225,A069,2025-02-22 00:00:00,preventive,7,1403,Scheduled inspection and lubrication
+226,A069,2025-03-08 00:00:00,preventive,4,1529,Scheduled inspection and lubrication
+227,A069,2025-03-16 22:00:00,corrective,61,9493,Failure after bearing_wear
+228,A069,2025-04-25 00:00:00,preventive,7,1557,Scheduled inspection and lubrication
+229,A070,2024-03-10 00:00:00,preventive,4,771,Scheduled inspection and lubrication
+230,A070,2024-09-28 00:00:00,preventive,2,1517,Scheduled inspection and lubrication
+231,A070,2025-04-27 00:00:00,preventive,8,1807,Scheduled inspection and lubrication
+232,A071,2024-10-30 00:00:00,preventive,8,1496,Scheduled inspection and lubrication
+233,A071,2025-03-02 00:00:00,preventive,3,903,Scheduled inspection and lubrication
+234,A071,2025-05-05 00:00:00,preventive,4,2101,Scheduled inspection and lubrication
+235,A072,2024-12-07 00:00:00,preventive,2,2146,Scheduled inspection and lubrication
+236,A072,2025-03-08 00:00:00,preventive,2,1204,Scheduled inspection and lubrication
+237,A073,2024-07-13 00:00:00,preventive,6,889,Scheduled inspection and lubrication
+238,A073,2024-12-21 00:00:00,preventive,7,1156,Scheduled inspection and lubrication
+239,A074,2024-04-05 00:00:00,preventive,2,1190,Scheduled inspection and lubrication
+240,A074,2024-07-23 00:00:00,preventive,5,1188,Scheduled inspection and lubrication
+241,A074,2024-09-10 00:00:00,preventive,5,1546,Scheduled inspection and lubrication
+242,A074,2025-05-23 00:00:00,preventive,4,2056,Scheduled inspection and lubrication
+243,A075,2024-06-15 00:00:00,preventive,7,1054,Scheduled inspection and lubrication
+244,A075,2025-02-08 00:00:00,preventive,4,1296,Scheduled inspection and lubrication
+245,A075,2025-04-23 00:00:00,preventive,5,1649,Scheduled inspection and lubrication
+246,A075,2025-06-05 00:00:00,preventive,3,2150,Scheduled inspection and lubrication
+247,A076,2024-08-04 00:00:00,preventive,7,1331,Scheduled inspection and lubrication
+248,A076,2025-02-18 00:00:00,preventive,6,1780,Scheduled inspection and lubrication
+249,A077,2025-01-12 00:00:00,preventive,2,2234,Scheduled inspection and lubrication
+250,A077,2025-04-24 00:00:00,preventive,4,1994,Scheduled inspection and lubrication
+251,A078,2024-03-21 00:00:00,preventive,3,1667,Scheduled inspection and lubrication
+252,A078,2024-07-09 00:00:00,preventive,3,1859,Scheduled inspection and lubrication
+253,A079,2024-12-27 00:00:00,preventive,3,858,Scheduled inspection and lubrication
+254,A079,2025-01-28 00:00:00,preventive,5,2027,Scheduled inspection and lubrication
+255,A079,2025-01-31 00:00:00,preventive,2,1549,Scheduled inspection and lubrication
+256,A080,2024-07-08 00:00:00,preventive,4,2054,Scheduled inspection and lubrication
+257,A080,2024-11-26 00:00:00,preventive,3,836,Scheduled inspection and lubrication
+258,A080,2025-01-04 00:00:00,preventive,4,1205,Scheduled inspection and lubrication
+259,A081,2024-06-05 00:00:00,preventive,5,2144,Scheduled inspection and lubrication
+260,A081,2024-07-15 00:00:00,preventive,5,763,Scheduled inspection and lubrication
+261,A081,2025-01-07 00:00:00,preventive,8,1552,Scheduled inspection and lubrication
+262,A081,2025-04-03 00:00:00,preventive,2,1302,Scheduled inspection and lubrication
+263,A082,2024-05-19 00:00:00,preventive,7,1345,Scheduled inspection and lubrication
+264,A082,2024-07-12 00:00:00,preventive,3,1744,Scheduled inspection and lubrication
+265,A082,2024-12-21 00:00:00,preventive,3,1348,Scheduled inspection and lubrication
+266,A082,2025-05-25 00:00:00,preventive,6,1776,Scheduled inspection and lubrication
+267,A083,2024-08-26 00:00:00,preventive,8,994,Scheduled inspection and lubrication
+268,A083,2025-01-15 00:00:00,preventive,8,1960,Scheduled inspection and lubrication
+269,A083,2025-05-20 00:00:00,preventive,3,1529,Scheduled inspection and lubrication
+270,A084,2024-03-31 00:00:00,preventive,7,1742,Scheduled inspection and lubrication
+271,A084,2024-05-01 00:00:00,preventive,4,1213,Scheduled inspection and lubrication
+272,A084,2025-01-09 03:00:00,corrective,44,16485,Failure after power_surge
+273,A084,2025-01-31 00:00:00,preventive,7,1130,Scheduled inspection and lubrication
+274,A084,2025-03-06 00:00:00,preventive,5,1822,Scheduled inspection and lubrication
+275,A085,2024-05-07 00:00:00,preventive,3,2178,Scheduled inspection and lubrication
+276,A085,2024-07-13 00:00:00,preventive,6,1800,Scheduled inspection and lubrication
+277,A085,2024-09-10 00:00:00,preventive,8,1267,Scheduled inspection and lubrication
+278,A085,2025-03-09 14:00:00,corrective,25,14864,Failure after bearing_wear
+279,A085,2025-04-04 00:00:00,preventive,4,2092,Scheduled inspection and lubrication
+280,A085,2025-06-21 19:00:00,corrective,63,22564,Failure after power_surge
+281,A086,2024-03-13 00:00:00,preventive,6,1291,Scheduled inspection and lubrication
+282,A086,2024-08-21 00:00:00,preventive,6,2077,Scheduled inspection and lubrication
+283,A086,2025-06-24 19:00:00,corrective,35,19239,Failure after power_surge
+284,A087,2024-12-17 00:00:00,preventive,8,2234,Scheduled inspection and lubrication
+285,A087,2025-03-30 00:00:00,preventive,6,2034,Scheduled inspection and lubrication
+286,A087,2025-04-25 00:00:00,preventive,6,1722,Scheduled inspection and lubrication
+287,A088,2024-06-01 00:00:00,preventive,6,752,Scheduled inspection and lubrication
+288,A088,2024-06-12 00:00:00,preventive,2,935,Scheduled inspection and lubrication
+289,A088,2024-08-16 00:00:00,preventive,2,1979,Scheduled inspection and lubrication
+290,A088,2025-03-24 20:00:00,corrective,21,17129,Failure after power_surge
+291,A089,2024-11-20 00:00:00,preventive,6,2201,Scheduled inspection and lubrication
+292,A089,2024-11-28 00:00:00,preventive,4,859,Scheduled inspection and lubrication
+293,A089,2025-03-16 00:00:00,preventive,4,1966,Scheduled inspection and lubrication
+294,A089,2025-04-27 09:00:00,corrective,49,19747,Failure after power_surge
+295,A090,2024-04-21 00:00:00,preventive,6,1458,Scheduled inspection and lubrication
+296,A090,2025-01-06 00:00:00,preventive,4,1061,Scheduled inspection and lubrication
+297,A090,2025-01-12 08:00:00,corrective,18,18245,Failure after power_surge
+298,A090,2025-05-06 00:00:00,preventive,7,1697,Scheduled inspection and lubrication
+299,A091,2025-01-10 00:00:00,preventive,4,2158,Scheduled inspection and lubrication
+300,A091,2025-01-14 01:00:00,corrective,28,24893,Failure after overheating
+301,A091,2025-03-03 00:00:00,preventive,5,1302,Scheduled inspection and lubrication
+302,A092,2024-10-08 00:00:00,preventive,6,1775,Scheduled inspection and lubrication
+303,A092,2025-05-01 00:00:00,preventive,5,1222,Scheduled inspection and lubrication
+304,A093,2024-03-10 00:00:00,preventive,5,2075,Scheduled inspection and lubrication
+305,A093,2024-10-18 00:00:00,preventive,3,836,Scheduled inspection and lubrication
+306,A093,2024-12-14 00:00:00,preventive,2,2247,Scheduled inspection and lubrication
+307,A093,2025-02-08 00:00:00,corrective,22,44742,Failure after power_surge
+308,A093,2025-03-23 00:00:00,preventive,2,1040,Scheduled inspection and lubrication
+309,A094,2024-07-15 00:00:00,preventive,4,1574,Scheduled inspection and lubrication
+310,A094,2025-06-03 00:00:00,preventive,7,2207,Scheduled inspection and lubrication
+311,A094,2025-06-19 00:00:00,preventive,7,1711,Scheduled inspection and lubrication
+312,A095,2024-09-10 00:00:00,preventive,8,797,Scheduled inspection and lubrication
+313,A095,2024-10-06 00:00:00,preventive,8,754,Scheduled inspection and lubrication
+314,A095,2024-10-10 00:00:00,preventive,7,1124,Scheduled inspection and lubrication
+315,A095,2025-03-10 09:00:00,corrective,43,27458,Failure after bearing_wear
+316,A096,2024-06-11 00:00:00,preventive,8,1670,Scheduled inspection and lubrication
+317,A096,2025-04-02 00:00:00,preventive,8,1923,Scheduled inspection and lubrication
+318,A096,2025-04-16 00:00:00,preventive,4,854,Scheduled inspection and lubrication
+319,A097,2024-08-18 00:00:00,preventive,2,1937,Scheduled inspection and lubrication
+320,A097,2024-12-20 00:00:00,preventive,5,804,Scheduled inspection and lubrication
+321,A097,2025-03-23 00:00:00,preventive,2,1780,Scheduled inspection and lubrication
+322,A098,2024-10-14 00:00:00,preventive,7,1726,Scheduled inspection and lubrication
+323,A098,2025-03-11 00:00:00,preventive,7,1284,Scheduled inspection and lubrication
+324,A098,2025-05-27 14:00:00,corrective,58,5051,Failure after pressure_loss
+325,A099,2024-03-23 00:00:00,preventive,2,1348,Scheduled inspection and lubrication
+326,A099,2025-03-13 00:00:00,preventive,5,1083,Scheduled inspection and lubrication
+327,A099,2025-04-29 05:00:00,corrective,70,14230,Failure after power_surge
+328,A099,2025-06-13 00:00:00,preventive,6,1243,Scheduled inspection and lubrication
+329,A100,2024-05-30 00:00:00,preventive,2,1726,Scheduled inspection and lubrication
+330,A100,2024-09-29 00:00:00,preventive,3,1623,Scheduled inspection and lubrication
+331,A100,2024-11-30 00:00:00,preventive,7,2094,Scheduled inspection and lubrication
