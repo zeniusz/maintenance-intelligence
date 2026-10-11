@@ -1,4 +1,4 @@
-# Data dictionary
+﻿# Data dictionary
 
 All data is **synthetic** (seed 42) except `weather.csv`, which holds Open-Meteo reanalysis values for the fictional facilities' coordinates (`weather_source` says which). Period: 2025-01-01 00:00 to 2025-06-30 23:00 UTC, hourly (4,344 h × 100 assets = 434,400 rows).
 
@@ -17,4 +17,4 @@ All data is **synthetic** (seed 42) except `weather.csv`, which holds Open-Meteo
 - Normal behaviour: per-asset nominal values by type (±8%), daily load cycle (±12%, peak 14:00), sensor noise, temperature coupled to ambient (+0.3 °C per °C). 15% of assets drift slowly. 20% are standby units (≈60% duty); idle hours read near zero and `operating_hours` stops increasing.
 - Faults (≈187 episodes, ≈1.2% of hours, 8–48 h each): `bearing_wear`, `overheating`, `pressure_loss`, `power_surge`, ramping from 30% to 100% of severity. About 60% of severe episodes end in a failure with 8–72 h downtime and a corrective maintenance record.
 - Data quality: 1.5% random missing values, 15 multi-hour sensor dropouts, and `-999` sentinel codes on ~0.05% of temperature readings.
-- Fault signatures are a simplification: real failures are messier, so the metrics here show the method works, not what accuracy OMV assets would give.
+- Fault signatures are a simplification: real failures are messier, so the metrics here show the method works, not what accuracy real assets would give.
