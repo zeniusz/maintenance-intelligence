@@ -16,16 +16,15 @@ An operator of oil, gas and energy plants may have thousands of assets sending r
 
 ## The solution in one minute
 
-| Step | What happens | Why |
+| Step | What happens, in plain words | Why it matters |
 |---|---|---|
-| 1. Data | A seeded generator creates 100 assets, hourly temperature / vibration / pressure / power / operating hours, maintenance history, missing values, sentinel codes (`-999`) and injected faults with known labels. | No real asset data is needed, runs are reproducible, and because faults are injected we can measure accuracy honestly. |
-| 2. Weather | Open-Meteo archive gives real ambient temperature and humidity at each site; the forecast API gives live conditions. Responses are cached; on any failure it falls back to synthetic weather. | Outdoor temperature affects equipment temperature. Removing that effect avoids false alarms. The app must always start, even offline. |
-| 3. Clean | Drop sentinel codes, interpolate short gaps (<= 6 h), join weather. | Real sensor data is messy. |
-| 4. Per-asset baseline | Each asset is compared with **its own** normal (median / MAD robust z-scores), with temperature adjusted for ambient weather and standby hours ignored. | Removes the "big machine vs small machine" problem. |
-| 5. Anomaly detection | An Isolation Forest scores how unusual each hour is across all sensors together. The alert threshold is the 99th percentile of **training** scores. | Catches combinations of sensors that no single limit would. Unsupervised: no failure labels needed. |
-| 6. Risk score (0-100) | `0.5 x sensor deviation + 0.3 x share of alerted hours + 0.2 x maintenance overdue`, scaled by asset criticality (0.7-1.0). | A transparent formula that engineers can challenge and tune, unlike a black box. |
-| 7. Explanation | Every asset gets a sentence such as *"Vibration +11.0σ vs own baseline; 7% of hours alerted; 4 d since maintenance; criticality 3/5"*. | Trust: the user can verify each claim in the sensor chart. |
-
+| 1. Make the data | A program creates 100 pretend machines (pumps, compressors, motors...) with six months of hourly readings: temperature, vibration, pressure, power and running hours. It adds realistic problems: missing values, broken readings, and faults we hide on purpose and write down. | Real plant data is private. Because we know where the faults are, we can check honestly whether the system finds them. |
+| 2. Add the weather | For each site we download the real outdoor temperature and humidity (free service Open-Meteo), plus today's live weather. If the internet is down, made-up weather is used instead. | A hot day makes a machine run warmer without anything being wrong. Knowing the weather prevents false alarms, and the app always starts. |
+| 3. Tidy up | Remove obvious junk values (like -999), fill short gaps of up to 6 hours, and attach the weather to each reading. | Real sensors glitch. Dirty data gives wrong answers. |
+| 4. Learn what is normal for each machine | Every machine is compared with **its own** usual behaviour, not with one rule for all. Weather is taken into account, and hours when the machine is switched off are ignored. | A big compressor and a small pump have very different normal values. One shared limit would be wrong for both. |
+| 5. Spot unusual hours | A model called an Isolation Forest looks at all sensors together and marks hours that look strange for that machine. It only learns from the first part of the data and is tested on the later part. | It finds odd combinations (for example vibration slightly up while power is down) that a single limit would miss, and it needs no examples of past failures. |
+| 6. Give each machine a risk score from 0 to 100 | The score mixes three things: how far readings drift from normal (50%), how often the machine was flagged (30%) and how long since its last maintenance (20%). It is then raised for machines that matter more. | A simple formula that an engineer can read and adjust, not a black box. It puts the machines to visit first at the top of the list. |
+| 7. Explain it in a sentence | Each machine gets a short reason, for example: "Vibration +11.0σ vs own baseline; 7% of hours alerted; 4 d since maintenance; criticality 3/5" (σ means "how many typical steps above normal"). | People only act on a warning they understand and can check in the charts. |
 **No data leakage.** The data is split by time (first 120 days to fit, the rest to evaluate). Baselines, weather adjustment, the forest and the threshold only ever see the training period. A test corrupts the test period and asserts that nothing fitted on the training period changes.
 
 ### Anomaly detection is not failure prediction
