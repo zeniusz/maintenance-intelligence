@@ -6,3 +6,5 @@ p.out
 # 24 MB, regenerated deterministically on first run (python -m mi.data_gen)
 data/sensor_readings.csv
 data/cache/
+data/.generate.lock
+data/.*.tmp

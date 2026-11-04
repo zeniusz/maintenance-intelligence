@@ -8,7 +8,7 @@ import pandas as pd
 from sklearn.ensemble import IsolationForest
 from sklearn.metrics import f1_score, precision_score, recall_score
 
-from .data_gen import DATA, SENSORS, generate
+from .data_gen import DATA, SENSORS, ensure_data
 
 # Relevance weight per sensor in the risk score (vibration is the strongest early indicator)
 WEIGHTS = dict(zip(SENSORS, [0.85, 1.0, 0.7, 0.7]))
@@ -17,9 +17,8 @@ WINDOW, TRAIN_DAYS = 168, 120
 
 
 def load(data=DATA) -> dict:
-    if not (data / "sensor_readings.csv").exists():
-        generate(data)
-    rd = lambda n, **k: pd.read_csv(data / f"{n}.csv", **k)
+    ensure_data(data)
+    rd =lambda n, **k: pd.read_csv(data / f"{n}.csv", **k)
     return dict(readings=rd("sensor_readings", parse_dates=["timestamp"]), assets=rd("assets"),
                 facilities=rd("facilities"), weather=rd("weather", parse_dates=["timestamp"]),
                 maint=rd("maintenance_history", parse_dates=["date"]),

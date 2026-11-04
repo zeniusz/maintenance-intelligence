@@ -94,3 +94,14 @@ def test_criticality_scales_risk(result):
     lo = P.risk_table(r, a.assign(criticality=1), mt, as_of).set_index("asset_id").risk
     hi = P.risk_table(r, a.assign(criticality=5), mt, as_of).set_index("asset_id").risk.reindex(lo.index)
     assert (hi >= lo).all() and (hi > lo).any()
+
+
+def test_concurrent_first_runs_generate_once_and_leave_complete_files(tmp_path, monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    calls, real = [], data_gen.generate
+    monkeypatch.setattr(data_gen, "generate", lambda *a, **k: (calls.append(1), real(*a, **k))[1])
+    with ThreadPoolExecutor(3) as ex:
+        list(ex.map(lambda _: data_gen.ensure_data(tmp_path, offline=True), range(3)))
+    assert len(calls) == 1  # the other two waited instead of regenerating over it
+    assert len(pd.read_csv(tmp_path / "sensor_readings.csv")) == 100 * data_gen.HOURS
+    assert not list(tmp_path.glob(".*.tmp")) and not (tmp_path / ".generate.lock").exists()

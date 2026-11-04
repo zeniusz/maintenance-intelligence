@@ -1,5 +1,7 @@
 """Reproducible synthetic data: 100 fictional assets, 5 fictional facilities, 6 months of hourly readings."""
+import os
 import sys
+import time
 from pathlib import Path
 
 import numpy as np
@@ -109,10 +111,32 @@ def generate(out: Path = DATA, offline: bool = False) -> None:
     maint = maint.sort_values(["asset_id", "date"]).reset_index(drop=True).rename_axis("event_id").reset_index()
 
     assets.insert(1, "asset_name", assets.asset_type + " " + assets.asset_id)
-    for name, df in dict(assets=assets, facilities=FACILITIES, sensor_readings=readings, weather=weather,
-                         maintenance_history=maint, anomaly_episodes=episodes).items():
-        df.to_csv(out / f"{name}.csv", index=False)
+    # Write each file under a temp name, then rename it (atomic), with sensor_readings last: its existence means the whole set is complete.
+    for name, df in dict(assets=assets, facilities=FACILITIES, weather=weather, maintenance_history=maint,
+                         anomaly_episodes=episodes, sensor_readings=readings).items():
+        tmp = out / f".{name}.csv.tmp"
+        df.to_csv(tmp, index=False)
+        os.replace(tmp, out / f"{name}.csv")
     print(f"Wrote {len(readings):,} readings, {len(episodes)} fault episodes to {out}")
+
+
+def ensure_data(out: Path = DATA, offline: bool = False) -> None:
+    """Generate the data once, even if several processes start at the same time (the others wait for the first)."""
+    done, lock = out / "sensor_readings.csv", out / ".generate.lock"
+    out.mkdir(parents=True, exist_ok=True)
+    while not done.exists():
+        try:
+            os.close(os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
+        except FileExistsError:  # someone else is generating: wait, unless their lock is stale (crashed run)
+            if time.time() - lock.stat().st_mtime > 900:
+                lock.unlink(missing_ok=True)
+            time.sleep(0.5)
+            continue
+        try:
+            if not done.exists():
+                generate(out, offline)
+        finally:
+            lock.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":
