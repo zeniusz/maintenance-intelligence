@@ -229,18 +229,30 @@ with tabs[3]:
     g = T.groupby("facility").agg(avg_risk=("risk", "mean"), critical=("level", lambda x: (x == "High").sum()),
                                   warning=("level", lambda x: (x == "Medium").sum()), alert_share=("alert_share", "mean"), assets=("asset_id", "count")).reset_index()
     a, b = st.columns(2)
-    a.plotly_chart(px.bar(g.sort_values("avg_risk"), x="avg_risk", y="facility", orientation="h", text_auto=".1f", color="avg_risk", color_continuous_scale=SCALE, range_color=(15, 45),
-                          title="Average risk by facility", labels={"avg_risk": "Average risk (0-100)", "facility": ""}).update_traces(textfont_color="#0b1220").update_layout(height=H, coloraxis_showscale=False), width="stretch")
-    b.plotly_chart(px.imshow(T.pivot_table(index="facility", columns="asset_type", values="risk", aggfunc="mean").round(1), text_auto=True, color_continuous_scale=SCALE, zmin=15, zmax=45,
-                             title="Average risk: facility × equipment type", labels={"color": "Avg risk", "x": "", "y": ""}, aspect="auto").update_traces(textfont_color="#0b1220").update_layout(height=H, margin=dict(l=10, r=30, t=40, b=90)), width="stretch")
-    table(g.round(2), alt="Facility summary: average risk, critical and warning assets, share of hours alerted", width="stretch", hide_index=True, column_config={
+    with a.container(border=True):
+        st.subheader("Average risk by facility")
+        show(px.bar(g.sort_values("avg_risk"), x="avg_risk", y="facility", orientation="h", text_auto=".1f", color="avg_risk", color_continuous_scale=SCALE, range_color=(15, 45),
+                    labels={"avg_risk": "Average risk (0-100)", "facility": ""})
+             .update_traces(textfont_color="#0b1220").add_vline(x=25, line_dash="dash", line_color="#f59e0b", annotation_text="Warning 25", annotation_position="top")
+             .add_vline(x=40, line_dash="dash", line_color="#ef4444", annotation_text="Critical 40", annotation_position="top")
+             .update_xaxes(range=[0, 45]).update_layout(height=H, coloraxis_showscale=False, margin=dict(l=0, r=10, t=30, b=0)), alt="Average risk by facility, with warning and critical limits")
+    with b.container(border=True):
+        st.subheader("Average risk by facility and equipment type")
+        pv = T.pivot_table(index="facility", columns="asset_type", values="risk", aggfunc="mean").round(1)
+        show(px.imshow(pv.rename(index=lambda s: s.split()[0], columns=lambda s: s.replace(" ", "<br>", 1)), text_auto=True, color_continuous_scale=SCALE, zmin=15, zmax=45,
+                       labels={"color": "Avg risk", "x": "", "y": ""}, aspect="auto").update_traces(textfont_color="#0b1220")
+             .update_xaxes(side="top", tickangle=0).update_layout(height=H, coloraxis_showscale=False, margin=dict(l=0, r=0, t=40, b=0)), alt="Average risk for each facility and equipment type")
+    table(g.round(2), alt="Facility summary: average risk, critical and warning assets, share of hours alerted", hide_index=True, column_config={
         "facility": "Facility", "avg_risk": st.column_config.NumberColumn("Average risk", format="%.1f"), "critical": "Critical", "warning": "Warning",
         "alert_share": st.column_config.NumberColumn("Share of hours alerted", format="percent"), "assets": "Assets"})
     w = D["weather"].merge(fac[["facility_id", "name"]], on="facility_id")
     w = w[w.name.isin(fsel)].groupby(["name", pd.Grouper(key="timestamp", freq="D")])[["ambient_temp_c", "humidity_pct"]].mean().reset_index()
     a, b = st.columns(2)
-    a.plotly_chart(px.line(w, x="timestamp", y="ambient_temp_c", color="name", title="Daily ambient temperature (°C, historical)", labels={"timestamp": "", "ambient_temp_c": "°C", "name": ""}).update_layout(legend=dict(orientation="h", y=-0.2)), width="stretch")
-    b.plotly_chart(px.line(w, x="timestamp", y="humidity_pct", color="name", title="Daily relative humidity (%, historical)", labels={"timestamp": "", "humidity_pct": "%", "name": ""}).update_layout(legend=dict(orientation="h", y=-0.2)), width="stretch")
+    for col, y, title, unit in [(a, "ambient_temp_c", "Daily ambient temperature (°C)", "°C"), (b, "humidity_pct", "Daily relative humidity (%)", "%")]:
+        with col.container(border=True):
+            st.subheader(title)
+            show(px.line(w, x="timestamp", y=y, color="name", labels={"timestamp": "", y: unit, "name": ""}).update_layout(height=H, margin=dict(l=0, r=10, t=10, b=0), legend=dict(orientation="h", y=-0.15)),
+                 alt=f"{title}, historical, per facility")
 with tabs[4]:
     a = st.selectbox("Asset", T.asset_id, format_func=lambda x: f"{x} · {T.set_index('asset_id').asset_name[x]}", key="d")
     row = T.set_index("asset_id").loc[a]
