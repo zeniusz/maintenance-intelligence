@@ -1,4 +1,6 @@
 """Maintenance Intelligence dashboard. Run: streamlit run app.py"""
+from urllib.parse import quote, urlencode
+
 import pandas as pd
 import plotly.express as px
 import plotly.io as pio
@@ -387,6 +389,21 @@ with tabs[4]:
         c[1].metric("Criticality", f"{row.criticality}/5")
         c[2].metric("Installed", int(row.install_year))
     st.markdown(f"**{'Why flagged' if row.level != 'Low' else 'Reading summary (not flagged)'}.** {row.explanation}.")
+    try:
+        base = st.context.url.split("?")[0]
+    except Exception:  # not available outside a browser session
+        base = ""
+    link = base + "?" + urlencode({"tab": "Asset details", "asset": a, "date": str(day), **({"site": fsel} if len(fsel) < len(fac) else {})}, doseq=True)
+    msg = (f"Asset: {row.asset_name} ({a}), {row.facility}\n"
+           f"Severity: {row.status}, risk {row.risk:.1f}/100" + ("" if pd.isna(row.change) else f" ({row.change:+.1f} pts vs 7 days earlier)") + "\n"
+           f"Why: {row.explanation}\n"
+           f"Assessed: {as_of:%d %b %Y} (synthetic demo data)\n"
+           f"Open this view: {link}")
+    c_share = st.columns([1, 3])
+    c_share[0].link_button("Share by email", f"mailto:?subject={quote(f'{a} {row.asset_type}: {row.status}, risk {row.risk:.0f}')}&body={quote(msg)}", icon=":material/mail:", width="stretch",
+                           help="Opens your email app with a ready-made message. Nothing is sent automatically, and you choose the recipient.")
+    with c_share[1].expander("Copy the message text instead"):
+        st.code(msg, language=None)
     ss["cmp"] = [x for x in ss.get("cmp", []) if x in set(T.asset_id) and x != a]
     others = st.multiselect("Compare with other assets (optional)", [x for x in T.asset_id if x != a], max_selections=4, format_func=fmt_asset, key="cmp",
                             placeholder="Select up to 4 assets, for example the next highest risks", help="Type to search. Options are sorted by risk, highest first.")
