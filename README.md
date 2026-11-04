@@ -45,6 +45,11 @@ Both versions are Streamlit apps on the same analysis (`mi/`), so the risk score
 | Finding an asset | Asset list with no hint about how it was narrowed | Tooltip: type to search; the list follows the Facilities and Asset types filters | Discoverable without a second picker. |
 | Reviewing several sites | Facilities hidden inside a collapsed filter panel | A visible **Sites** picker: choose one or several sites, with an 'In view' line (sites, asset count, assessment date) above every tab | You always know exactly which sites you are looking at. |
 | Errors and empty states | Generic warning or a raw error | Plain messages for: data could not be prepared, no assets match (with a Clear filters button), a stale shared link, no readings or standby assets, weather unavailable for a site, and not enough history for the 7-day comparison | Nothing fails silently, and missing data is never shown as zero. |
+| Consistency and wording | Investigate updated only one asset picker; Asset details showed the simulated fault bands by default; labels said 0.7 to 1.0 and 'maintenance overdue'; 'Analysis period' implied it changed the risk | One selected asset across tabs; fault bands off everywhere unless switched on; multiplier shown as about 0.64 to 1.0 and 'time since maintenance'; the window is called 'Chart and alert window', and risk is stated as always scored on the last 7 days | Numbers and labels now match what the code computes. |
+| Header and reading order | Two stacked header buttons and a tall header before the first asset | One compact 'About · refresh' menu; the top-three assets sit higher; mobile padding reduced | The first decision is visible sooner. |
+| Evidence in the priorities tab | A 'Why' column cut off at the table edge | Short table plus a readable 'Why each asset is flagged' list; the CSV keeps the full explanation and is dated | Nothing is clipped, and exports are reproducible. |
+| Is it still happening? | Peak and latest bars only | A sentence stating the latest reading, its timestamp, and the 7-day peak | No interpretation needed. |
+| Sensor monitoring | Four tall charts by default | Opens on the sensor driving that asset's risk; selected asset is kept in the shareable link | Less scrolling, and links reopen the same asset. |
 | Small screens | Status badges wrapped over several lines | Badges stay on one line and stack cleanly on phones | Usable on a phone. |
 
 | Version 1 | Version 2 |
@@ -79,12 +84,12 @@ The Isolation Forest says "this hour looks unlike this asset's normal". It does 
 | Tab | What it shows |
 |---|---|
 | **Overview** | Data-freshness header, four KPIs, ranked priorities table, facility risk map, risk by facility, facility x asset-type heatmap, live weather per site, model performance. |
-| **Sensor monitoring** | Any asset and sensor over 7/30/90 days, red dots for model alerts, orange bands for the injected (true) fault episodes. |
+| **Sensor monitoring** | Any asset and sensor over 7/30/90 days, red dots for model alerts, optional orange bands (switch) for the injected, simulated fault periods. |
 | **Maintenance priorities** | Top-N assets by risk with severity colours, full table with explanations, CSV download. |
 | **Facility comparison** | Risk by facility and by facility x type, plus weather history. |
 | **Asset details** | Risk, criticality, "why this alert?", current sensor deviation, 30-day trend and maintenance history. |
 
-Severity is always colour **and** text: **Normal** (risk < 25), **Warning** (25-40), **Critical** (> 40). The filters (facility, asset type, 7/30/90-day period, risk date) apply to every tab.
+Severity is always colour **and** text: **Normal** (risk 25 or less), **Warning** (above 25 up to 40), **Critical** (above 40). The filters (sites, asset type, risk date and the 7/30/90-day chart window) apply to every tab. Risk itself is always scored on the 7 days before the risk date.
 
 | Sensor monitoring | Maintenance priorities |
 |---|---|
@@ -150,6 +155,9 @@ See [docs/data_dictionary.md](docs/data_dictionary.md) and [docs/architecture.md
 3. **Failure prediction:** with real failure records, add time-to-failure models and calibrated probabilities.
 4. **Better models:** compare autoencoders or per-asset-type models, using a proper validation window.
 5. **Operations:** scheduled refresh, alert notifications, Docker deployment, and a button to mark an alert as a false alarm so the system learns from it.
+## Not in the demo (adoption gaps)
+These are intentionally not faked: recording who reviewed or acknowledged an alert, review history, team permissions, scheduled shift reports, facility-level reports beyond the CSV exports, integration with a maintenance system, and validation of the risk score on real plant data. The score ranks assets for inspection; it is not a failure prediction.
+
 ## Limitations
 
 Synthetic faults are cleaner than real ones. There is one model for the whole fleet. The alert quantile was chosen on the test period, so scores are slightly optimistic (a real project would use a separate validation window). Score weights are heuristics, not learned.

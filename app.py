@@ -10,7 +10,7 @@ from mi.data_gen import SENSORS
 from mi.weather import get_current
 
 st.set_page_config("Maintenance Intelligence", ":material/monitoring:", layout="wide", initial_sidebar_state="collapsed")
-st.markdown("<style>.block-container { padding: 3rem 2rem 2rem; max-width: 1600px; }</style>", unsafe_allow_html=True)  # no native setting for page padding
+st.markdown("<style>.block-container { padding: 2.4rem 2rem 2rem; max-width: 1600px; } @media (max-width: 768px) { .block-container { padding: 2.2rem .75rem 2rem; } }</style>", unsafe_allow_html=True)  # no native setting for page padding
 pio.templates["mi"] = pio.templates["plotly_dark"]
 pio.templates["mi"].layout.update(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_family="Inter",
                                   margin=dict(l=10, r=30, t=40, b=10), title_font_size=14, hovermode="x unified")
@@ -54,7 +54,7 @@ def risks(as_of):
     return P.risk_table(R, assets, D["maint"], as_of).join(fac.set_index("facility_id").name.rename("facility"), on="facility_id")
 
 
-def sensor_fig(a, sensors, start, end, truth=True):
+def sensor_fig(a, sensors, start, end, truth=False):
     d = R[(R.asset_id == a) & R.timestamp.between(start, end)]
     fig = make_subplots(rows=len(sensors), cols=1, shared_xaxes=True, subplot_titles=[LBL[s] for s in sensors], vertical_spacing=0.08)
     ep = D["episodes"][(D["episodes"].asset_id == a) & (D["episodes"].end >= start) & (D["episodes"].start <= end)]
@@ -86,7 +86,13 @@ def table(data, **kw):
 
 
 def go(asset):
-    ss["d"], ss["tab"] = asset, "Asset details"
+    ss["d"] = ss["m"] = asset  # one selected asset for both the monitoring and details tabs
+    ss["tab"] = "Asset details"
+
+
+def sync_asset(src):
+    """Keep the Sensor monitoring and Asset details pickers on the same asset."""
+    ss["m" if src == "d" else "d"] = ss[src]
 
 
 def open_asset(key):
@@ -103,24 +109,26 @@ def reset():
 live_df, fetched = live(fac)
 now = pd.Timestamp.now("UTC")
 data_ok = now - LAST.tz_localize("UTC") < pd.Timedelta(hours=2)
-h = st.columns([2, 1.25, 1.25, 0.9], vertical_alignment="center")
+h = st.columns([2, 1.4, 1.4, 0.8], vertical_alignment="center")
 h[0].title("Maintenance Intelligence")
 with h[1]:
     st.badge("Live data" if data_ok else "Historical simulation · synthetic data", color="green" if data_ok else "blue")
     st.caption(f"Asset data as of **{LAST:%d %b %Y %H:%M}**  \nPipeline run **{synced:%d %b %H:%M UTC}**")
 with h[2]:
     st.badge("Live weather" if not live_df.empty else "Sync failed", color="green" if not live_df.empty else "red")
-    st.caption("Weather (Open-Meteo, separate source)  \n" + (f"fetched **{fetched:%d %b %H:%M UTC}**" if not live_df.empty else "live feed unavailable"))
+    st.caption("Weather (Open-Meteo), context only  \n" + (f"fetched **{fetched:%d %b %H:%M UTC}**" if not live_df.empty else "live feed unavailable"))
 with h[3]:
-    if st.button("Refresh weather", width="stretch", help="Re-fetches live weather. Asset data is a fixed synthetic snapshot."):
-        live.clear()
-        st.rerun()
-    with st.popover("About the data", width="stretch"):
+    with st.popover("About · refresh", width="stretch"):
+        if st.button("Refresh weather", width="stretch", help="Re-fetches live weather. Asset data is a fixed synthetic snapshot."):
+            live.clear()
+            st.rerun()
         st.markdown("**Asset data is fully synthetic** (100 fictional assets, 5 fictional facilities).  \n"
                     f"**Weather:** live conditions from the Open-Meteo forecast API; model history from the Open-Meteo archive "
                     f"({'/'.join(sorted(D['weather'].weather_source.unique()))}).  \n"
-                    "**Alerts** = hours flagged by the Isolation Forest. **Critical** = risk score > 40 (Warning 25-40, Normal < 25).  \n"
-                    "**Sharing:** the page address holds your filters, tab and selected asset. Copy it to share this exact view.")
+                    "**Alerts** = hours flagged by the Isolation Forest. **Critical** = risk above 40, **Warning** = above 25 up to 40, **Normal** = 25 or less.  \n"
+                    "**What the score is:** it ranks assets for inspection from anomaly detection, criticality and maintenance history. It is not a failure prediction and has not been validated on real plant data.  \n"
+                    "**Weather** is shown for context only; the risk results come from the historical simulation.  \n"
+                    "**Sharing:** the page address holds your sites, filters, tab and selected asset. Copy it to share this exact view.")
 
 # ---- Shareable view: filters and asset live in the URL (?site=..&type=..&period=7&date=2025-06-20&asset=A061)
 qp = st.query_params
@@ -145,9 +153,9 @@ with st.expander(f"More filters · {n_active} active" if n_active else "More fil
     c = st.columns([2, 1.4, 1.4, 0.8], vertical_alignment="bottom")
     tsel = c[0].multiselect("Asset types", sorted(assets.asset_type.unique()), key="tsel",
                             placeholder="All asset types (type to search)") or sorted(assets.asset_type.unique())
-    period = int((c[1].segmented_control("Analysis period", ["7", "30", "90"], default="30", format_func=lambda d: f"{d} d", key="period") or "30"))
+    period = int((c[1].segmented_control("Chart and alert window", ["7", "30", "90"], default="30", format_func=lambda d: f"{d} d", key="period", help="Sets the window for charts and the alert count. Risk itself is always scored on the last 7 days.") or "30"))
     day = c[2].date_input("Risk assessment date", LAST.date(), min_value=(R.timestamp.min() + pd.Timedelta(days=8)).date(),
-                          max_value=LAST.date(), key="asof", help="Risk is scored on the 7 days before this date. Default: latest data.")
+                          max_value=LAST.date(), key="asof", help="Risk is always scored on the 7 days before this date. Default: latest data.")
     c[3].button("Reset all", on_click=reset, width="stretch")
 as_of = min(pd.Timestamp(day) + pd.Timedelta(hours=23), LAST)
 T = risks(as_of)
@@ -187,7 +195,7 @@ with tabs[0]:
             st.button("Investigate", key=f"go_{r.asset_id}", on_click=go, args=(r.asset_id,), icon=":material/arrow_forward:", width="stretch")
 
     for col, (lbl, val, sub, delta) in zip(st.columns(4), [
-            ("Assets monitored", len(T), f"Across {T.facility.nunique()} facilities", None),
+            ("Assets assessed", len(T), f"Across {T.facility.nunique()} facilities", None),
             ("Critical assets", n_crit, f"{n_crit / len(T):.0%} of assets · risk > 40", None if n_crit_prev is None else ("No change vs 7 d earlier" if n_crit_prev == n_crit else f"{n_crit - n_crit_prev:+d} vs 7 d earlier")),
             ("Average risk", f"{T.risk.mean():.1f}", "Scale 0-100", None if avg_prev is None else f"{T.risk.mean() - avg_prev:+.1f} vs 7 d earlier"),
             ("Model alerts", f"{n_alerts:,}", f"Alert-hours, last {period} days", None)]):
@@ -235,7 +243,7 @@ with tabs[0]:
         show(px.imshow(hm, text_auto=".0f", color_continuous_scale=SCALE, zmin=15, zmax=45, aspect="auto",
                                   labels={"color": "Avg risk", "x": "", "y": ""})
                         .update_xaxes(side="top").update_layout(height=H, coloraxis_showscale=False, margin=dict(l=0, r=0, t=0, b=0)), width="stretch")
-        st.caption("Cell colour = average risk: teal below 25, amber 25 to 40, red above 40.")
+        st.caption("Cell colour = average risk: teal 25 or below, amber above 25 to 40, red above 40.")
 
     with st.container(border=True):
         st.subheader("Live conditions at facilities")
@@ -264,8 +272,9 @@ with tabs[0]:
 
 with tabs[1]:
     c = st.columns([2, 1, 1], vertical_alignment="bottom")
-    a = c[0].selectbox("Asset", list(T.asset_id), format_func=lambda x: f"{x} · {T.set_index('asset_id').asset_name[x]}", key="m", help="Type to search. The list follows the Facilities and Asset types filters at the top.")
-    s = c[1].selectbox("Sensor", ["All"] + SENSORS)
+    a = c[0].selectbox("Asset", list(T.asset_id), format_func=lambda x: f"{x} · {T.set_index('asset_id').asset_name[x]}", key="m", on_change=sync_asset, args=("m",), help="Type to search. The list follows the Facilities and Asset types filters at the top.")
+    main_sensor = T.set_index("asset_id").driver[a]  # open on the sensor driving this asset's risk, not four tall charts
+    s = c[1].selectbox("Sensor", ["All"] + SENSORS, index=1 + SENSORS.index(main_sensor), format_func=lambda x: x if x == "All" else LBL[x])
     truth = c[2].toggle("Show simulated fault periods", False, help="Orange bands mark the faults injected into the synthetic data. They are evaluation labels, not model output.")
     win = R[(R.asset_id == a) & R.timestamp.between(as_of - pd.Timedelta(days=period), as_of)]
     if win.empty or win[SENSORS].isna().all(axis=None):
@@ -279,15 +288,17 @@ with tabs[1]:
 with tabs[2]:
     n = int(st.columns([1, 4])[0].number_input("Show top N assets", 1, len(T), min(15, len(T)), help=f"Shows the N highest-risk assets after filtering ({len(T)} match). Type a number or use +/-."))
     top = T.head(n)
-    cols = ["asset_id", "asset_type", "facility", "driver_label", "peak_z", "risk", "change", "status", "explanation"]
+    cols = ["asset_id", "asset_type", "facility", "driver_label", "peak_z", "risk", "change", "status"]
     ss["prio2_ids"] = list(top.asset_id)
-    table(tint(top[cols].reset_index(drop=True), ["status"]), width="stretch", hide_index=True, height=min(740, 38 + 35 * n), on_select=lambda: open_asset("prio2"), selection_mode="single-row", key="prio2", alt="Maintenance priorities with driver, deviation, risk, severity and explanation. Select a row to open the asset.", column_config={
+    table(tint(top[cols].reset_index(drop=True), ["status"]), width="stretch", hide_index=True, height=min(740, 38 + 35 * n), on_select=lambda: open_asset("prio2"), selection_mode="single-row", key="prio2", alt="Maintenance priorities with driver, deviation, risk and severity. Select a row to open the asset.", column_config={
         "asset_id": st.column_config.TextColumn("Asset", width="small"), "asset_type": "Equipment", "facility": st.column_config.TextColumn("Facility", width="large"), "status": "Status",
         "driver_label": "Main driver", "peak_z": st.column_config.NumberColumn("Peak deviation (σ)", format="%+.1f"), "change": st.column_config.NumberColumn("Change vs 7 d", format="%+.1f"),
         "explanation": st.column_config.TextColumn("Why", width="large"),
         "risk": st.column_config.NumberColumn("Risk (0-100)", format="%.1f")})
-    st.download_button("Download ranking (CSV)", top[cols + ["criticality"]].to_csv(index=False), "maintenance_priorities.csv")
-    st.caption("Select a row to open that asset in Asset details. risk = 100 × (0.5·sensor deviation + 0.3·alert share + 0.2·maintenance overdue) × criticality multiplier (0.7–1.0)")
+    with st.expander("Why each asset is flagged", icon=":material/notes:"):
+        st.markdown("\n".join(f"- **{r.asset_id}** ({r.status}): {r.explanation}" for r in top.itertuples()))
+    st.download_button("Download ranking (CSV)", top[cols + ["criticality", "explanation"]].to_csv(index=False), f"maintenance_priorities_{as_of:%Y-%m-%d}.csv")
+    st.caption("Select a row to open that asset in Asset details. risk = 100 × (0.5·sensor deviation + 0.3·alert share + 0.2·time since maintenance) × criticality multiplier (about 0.64 to 1.0)")
 
 with tabs[3]:
     g = T.groupby("facility").agg(avg_risk=("risk", "mean"), critical=("level", lambda x: (x == "High").sum()),
@@ -305,10 +316,11 @@ with tabs[3]:
         show(px.imshow(pv.rename(index=lambda s: s.split()[0], columns=lambda s: s.replace(" ", "<br>", 1)), text_auto=True, color_continuous_scale=SCALE, zmin=15, zmax=45,
                        labels={"color": "Avg risk", "x": "", "y": ""}, aspect="auto").update_traces(textfont_color="#0b1220")
              .update_xaxes(side="top", tickangle=0).update_layout(height=H, coloraxis_showscale=False, margin=dict(l=0, r=0, t=40, b=0)), alt="Average risk for each facility and equipment type")
-        st.caption("Cell colour = average risk of the assets in that cell: teal below 25, amber 25 to 40, red above 40.")
+        st.caption("Cell colour = average risk of the assets in that cell: teal 25 or below, amber above 25 to 40, red above 40.")
     table(g.sort_values(["critical", "avg_risk"], ascending=False).round(2), alt="Facility summary: average risk, critical and warning assets, share of hours alerted", hide_index=True, column_config={
         "facility": "Facility", "avg_risk": st.column_config.NumberColumn("Average risk", format="%.1f"), "critical": "Critical", "warning": "Warning",
         "alert_share": st.column_config.NumberColumn("Share of hours alerted", format="percent"), "assets": "Assets"})
+    st.download_button("Download facility summary (CSV)", g.sort_values(["critical", "avg_risk"], ascending=False).round(2).to_csv(index=False), f"facility_summary_{as_of:%Y-%m-%d}.csv")
     w = D["weather"].merge(fac[["facility_id", "name"]], on="facility_id")
     w = w[w.name.isin(fsel)].groupby(["name", pd.Grouper(key="timestamp", freq="D")])[["ambient_temp_c", "humidity_pct"]].mean().reset_index()
     a, b = st.columns(2)
@@ -318,7 +330,7 @@ with tabs[3]:
             show(px.line(w, x="timestamp", y=y, color="name", labels={"timestamp": "", y: unit, "name": ""}).update_layout(height=H, margin=dict(l=0, r=10, t=10, b=0), legend=dict(orientation="h", y=-0.15)),
                  alt=f"{title}, historical, per facility")
 with tabs[4]:
-    a = st.selectbox("Asset", list(T.asset_id), format_func=lambda x: f"{x} · {T.set_index('asset_id').asset_name[x]}", key="d", help="Type to search. The list follows the Facilities and Asset types filters at the top.")
+    a = st.selectbox("Asset", list(T.asset_id), format_func=lambda x: f"{x} · {T.set_index('asset_id').asset_name[x]}", key="d", on_change=sync_asset, args=("d",), help="Type to search. The list follows the Facilities and Asset types filters at the top.")
     row = T.set_index("asset_id").loc[a]
     with st.container(border=True):
         st.markdown(f"**{row.asset_name}** · {row.facility}")
@@ -339,7 +351,10 @@ with tabs[4]:
                     title="Deviation from own baseline: 7-day peak vs latest reading (dashed lines = ±3σ)")
              .add_vline(x=0, line_color="#94a3b8").add_vline(x=3, line_dash="dash", line_color="#475569").add_vline(x=-3, line_dash="dash", line_color="#475569")
              .update_layout(height=300, yaxis_title=None, legend=dict(orientation="h", y=-0.2, title=None)), alt="Peak versus latest deviation from baseline for each sensor")
-        st.caption("A high peak with a low latest value means the condition has eased since; both high means it is still ongoing.")
+        worst = last.abs().idxmax()
+        st.markdown(f"**Latest reading** (6 h mean to {as_of:%d %b %Y %H:%M}): largest deviation is **{DRV[worst[3:]]} {last[worst]:+.1f}σ**, "
+                    f"{'outside' if abs(last[worst]) > 3 else 'within'} the ±3σ normal range. **7-day peak:** {DRV[peak.abs().idxmax()[3:]]} {peak[peak.abs().idxmax()]:+.1f}σ.")
+        st.caption("A high peak with a low latest value means the condition has eased since; both high means it is still ongoing. \"Latest\" is the end of the assessed period, not today.")
     show(sensor_fig(a, SENSORS, as_of - pd.Timedelta(days=30), as_of), width="stretch", key="detail_trend")
     st.subheader("Maintenance history")
     mh = D["maint"][D["maint"].asset_id == a].sort_values("date", ascending=False).drop(columns=["asset_id"])
@@ -347,7 +362,7 @@ with tabs[4]:
 
 # ---- write the current view back to the URL so it can be shared
 for key, val in {"site": ss.get("fsel"), "type": ss.get("tsel"), "period": ss.get("period") if ss.get("period") != "30" else None,
-                 "date": str(day) if day != LAST.date() else None, "asset": ss.get("d") if ss.get("tab") == "Asset details" else None}.items():
+                 "date": str(day) if day != LAST.date() else None, "asset": ss.get("d") if ss.get("tab") in ("Asset details", "Sensor monitoring") else None}.items():
     if val:
         qp[key] = val
     elif key in qp:
