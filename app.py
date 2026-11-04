@@ -31,7 +31,12 @@ def live(_fac):  # refreshed at most every 15 min, or via the Refresh button
 
 
 ss = st.session_state
-D, synced = load()
+try:
+    D, synced = load()
+except Exception as e:  # first-run pipeline failure: clear message instead of a stack trace
+    st.error("Maintenance data could not be prepared, so no risk results are available. Reload the page to try again. If it keeps failing, the data files may be missing or damaged.")
+    st.caption(f"Technical detail: {type(e).__name__}: {e}")
+    st.stop()
 R, assets, fac = D["readings"], D["assets"], D["facilities"]
 COLORS = {"Low": "#14b8a6", "Medium": "#f59e0b", "High": "#ef4444"}  # teal / amber / red, always with a text label
 STATUS = {"Low": "Normal", "Medium": "Warning", "High": "Critical"}
@@ -121,7 +126,9 @@ with h[3]:
 qp = st.query_params
 if "seeded" not in ss:
     ss.seeded = True
-    ss.fsel, ss.tsel = [v for v in qp.get_all("site") if v in set(fac.name)], [v for v in qp.get_all("type") if v in set(assets.asset_type)]
+    sites, types = qp.get_all("site"), qp.get_all("type")
+    ss.fsel, ss.tsel = [v for v in sites if v in set(fac.name)], [v for v in types if v in set(assets.asset_type)]
+    ss.stale_link = len(ss.fsel) < len(sites) or len(ss.tsel) < len(types) or (qp.get("period") not in (None, "7", "30", "90"))
     if qp.get("period") in ("7", "30", "90"):
         ss.period = qp["period"]
     try:
@@ -129,30 +136,34 @@ if "seeded" not in ss:
     except (KeyError, ValueError):
         pass
 
-# ---- Filters: compact, collapsible
-n_active = bool(ss.get("fsel")) + bool(ss.get("tsel")) + (ss.get("period", "30") != "30") + (ss.get("asof", LAST.date()) != LAST.date())
-with st.expander(f"Filters · {n_active} active" if n_active else "Filters · none active", icon=":material/tune:"):
-    c = st.columns([2, 2, 1.4, 1.4, 0.8], vertical_alignment="bottom")
-    # empty selection = no filter
-    fsel = c[0].multiselect("Facilities", list(fac.name), key="fsel", placeholder="All facilities (type to search)") or list(fac.name)
-    tsel = c[1].multiselect("Asset types", sorted(assets.asset_type.unique()), key="tsel",
+# ---- Sites are always visible (empty = all sites; the line under the controls says exactly what is in view)
+fsel = st.multiselect("Sites", list(fac.name), key="fsel", placeholder="All sites (select one or more to review them together)") or list(fac.name)
+if ss.pop("stale_link", False):
+    st.info("Some saved selections in this link are no longer available. The view has been updated.")
+n_active = bool(ss.get("tsel")) + (ss.get("period", "30") != "30") + (ss.get("asof", LAST.date()) != LAST.date())
+with st.expander(f"More filters · {n_active} active" if n_active else "More filters · none active", icon=":material/tune:"):
+    c = st.columns([2, 1.4, 1.4, 0.8], vertical_alignment="bottom")
+    tsel = c[0].multiselect("Asset types", sorted(assets.asset_type.unique()), key="tsel",
                             placeholder="All asset types (type to search)") or sorted(assets.asset_type.unique())
-    period = int((c[2].segmented_control("Analysis period", ["7", "30", "90"], default="30", format_func=lambda d: f"{d} d", key="period") or "30"))
-    day = c[3].date_input("Risk assessment date", LAST.date(), min_value=(R.timestamp.min() + pd.Timedelta(days=8)).date(),
+    period = int((c[1].segmented_control("Analysis period", ["7", "30", "90"], default="30", format_func=lambda d: f"{d} d", key="period") or "30"))
+    day = c[2].date_input("Risk assessment date", LAST.date(), min_value=(R.timestamp.min() + pd.Timedelta(days=8)).date(),
                           max_value=LAST.date(), key="asof", help="Risk is scored on the 7 days before this date. Default: latest data.")
-    c[4].button("Reset all", on_click=reset, width="stretch")
-
+    c[3].button("Reset all", on_click=reset, width="stretch")
 as_of = min(pd.Timestamp(day) + pd.Timedelta(hours=23), LAST)
 T = risks(as_of)
 T = T[T.facility.isin(fsel) & T.asset_type.isin(tsel)]
 if T.empty:
-    st.warning("No assets match the filters.")
+    st.info("No assets match these filters. Select other sites or clear the filters.")
+    st.button("Clear filters", on_click=reset)
     st.stop()
 T = T.assign(status=T.level.map(STATUS), driver_label=T.driver.map(DRV))
 if "seeded_asset" not in ss:
     ss.seeded_asset = True
     if qp.get("asset") in set(T.asset_id):
         ss.d = ss.m = qp["asset"]
+for k in ("d", "m"):
+    if ss.get(k) not in set(T.asset_id):
+        ss.pop(k, None)  # asset left the current selection: fall back to the highest-risk one
 n_alerts = int(R.alert[R.asset_id.isin(T.asset_id) & (R.timestamp > as_of - pd.Timedelta(days=period)) & (R.timestamp <= as_of)].sum())
 n_crit = int((T.level == "High").sum())
 WEEK = pd.Timedelta(days=7)
@@ -161,6 +172,8 @@ T = T.assign(change=T.risk - T.asset_id.map(prev.risk) if prev is not None else 
 n_crit_prev = int((prev.loc[prev.index.isin(T.asset_id), "level"] == "High").sum()) if prev is not None else None
 avg_prev = prev.loc[prev.index.isin(T.asset_id), "risk"].mean() if prev is not None else None
 
+sites_txt = "All sites" if T.facility.nunique() == len(fac) else ", ".join(sorted(T.facility.unique()))
+st.caption(f"**In view:** {sites_txt} · {len(T)} assets · assessed {as_of:%d %b %Y}")
 tabs = st.tabs(["Overview", "Sensor monitoring", "Maintenance priorities", "Facility comparison", "Asset details"], key="tab", bind="query-params")
 
 with tabs[0]:
@@ -192,6 +205,9 @@ with tabs[0]:
             "risk": st.column_config.NumberColumn("Risk score (0-100)", format="%.0f"), "change": st.column_config.NumberColumn("Change vs 7 d", format="%+.1f"), "status": "Severity"})
         st.caption("Ranked by risk score. Select a row to open that asset in Asset details.")
 
+    if prev is None:
+        st.caption("Seven-day comparison is unavailable for this date: there is not enough earlier data.")
+
     c1, c2, c3 = st.columns([1.3, 1, 1.1])
     with c1.container(border=True):
         st.subheader("Facility risk map")
@@ -199,7 +215,7 @@ with tabs[0]:
                                                         assets=("asset_id", "count")).reset_index().merge(fac, on="facility_id")
         lv = live_df.set_index("facility_id") if not live_df.empty else None
         g["now"] = [f"{lv.temperature_2m[f]:.1f} °C, {lv.relative_humidity_2m[f]:.0f}% RH, wind {lv.wind_speed_10m[f]:.0f} km/h"
-                    if lv is not None else "live weather unavailable" for f in g.facility_id]
+                    if lv is not None and f in lv.index else "live weather unavailable" for f in g.facility_id]
         show(px.scatter_map(g, lat="latitude", lon="longitude", size="assets", color="avg_risk", zoom=3.3, center=dict(lat=50, lon=15),
                                        color_continuous_scale=SCALE, range_color=(15, 45), hover_name="facility",
                                        hover_data={"avg_risk": ":.1f", "critical": True, "assets": True, "now": True, "latitude": False, "longitude": False},
@@ -227,7 +243,12 @@ with tabs[0]:
             st.info("Live weather feed unavailable right now. Historical/synthetic weather is still used by the model.")
         else:
             for col, f in zip(st.columns(5), fac.itertuples()):
-                x = live_df[live_df.facility_id == f.facility_id].iloc[0]
+                row_w = live_df[live_df.facility_id == f.facility_id]
+                if row_w.empty:
+                    col.metric(f.name, "n/a")
+                    col.caption("Weather unavailable for this site")
+                    continue
+                x = row_w.iloc[0]
                 col.metric(f.name, f"{x.temperature_2m:.1f} °C")
                 col.caption(f"{x.relative_humidity_2m:.0f}% RH · wind {x.wind_speed_10m:.0f} km/h")
             st.caption("Open-Meteo forecast API, current conditions. Context only; the model trains on the historical archive.")
@@ -246,6 +267,11 @@ with tabs[1]:
     a = c[0].selectbox("Asset", list(T.asset_id), format_func=lambda x: f"{x} · {T.set_index('asset_id').asset_name[x]}", key="m", help="Type to search. The list follows the Facilities and Asset types filters at the top.")
     s = c[1].selectbox("Sensor", ["All"] + SENSORS)
     truth = c[2].toggle("Show simulated fault periods", False, help="Orange bands mark the faults injected into the synthetic data. They are evaluation labels, not model output.")
+    win = R[(R.asset_id == a) & R.timestamp.between(as_of - pd.Timedelta(days=period), as_of)]
+    if win.empty or win[SENSORS].isna().all(axis=None):
+        st.warning("No sensor readings are available for this asset and period, so its condition cannot be assessed here.")
+    elif not win.running.any():
+        st.info("This asset was on standby during this period. Low readings do not necessarily indicate a fault.")
     st.caption(f"{(as_of - pd.Timedelta(days=period)):%d %b} to {as_of:%d %b %Y}. Red dots are hours when the model flagged the asset as a whole (all four sensors together), so they appear on every chart, even where that sensor looks normal.")
     show(sensor_fig(a, SENSORS if s == "All" else [s], as_of - pd.Timedelta(days=period), as_of, truth), alt=f"Sensor readings for {a} over the last {period} days with model alerts")
     st.caption("Standby hours read low.")

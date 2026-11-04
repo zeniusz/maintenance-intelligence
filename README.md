@@ -43,6 +43,8 @@ Both versions are Streamlit apps on the same analysis (`mi/`), so the risk score
 | Tables | Nine or ten narrow columns, facility names cut off | Seven focused columns in Overview, wider facility column, full explanation only in the priorities tab | Scannable at a glance. |
 | Layout polish | Uneven KPI cards; large facility name competing with risk on Asset details | Equal-height KPI cards; facility shown as a small line; heatmap colour legend and shareable-link tip added | Consistent components and clear hierarchy. |
 | Finding an asset | Asset list with no hint about how it was narrowed | Tooltip: type to search; the list follows the Facilities and Asset types filters | Discoverable without a second picker. |
+| Reviewing several sites | Facilities hidden inside a collapsed filter panel | A visible **Sites** picker: choose one or several sites, with an 'In view' line (sites, asset count, assessment date) above every tab | You always know exactly which sites you are looking at. |
+| Errors and empty states | Generic warning or a raw error | Plain messages for: data could not be prepared, no assets match (with a Clear filters button), a stale shared link, no readings or standby assets, weather unavailable for a site, and not enough history for the 7-day comparison | Nothing fails silently, and missing data is never shown as zero. |
 | Small screens | Status badges wrapped over several lines | Badges stay on one line and stack cleanly on phones | Usable on a phone. |
 
 | Version 1 | Version 2 |
