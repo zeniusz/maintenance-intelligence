@@ -80,12 +80,15 @@ def table(data, **kw):
     st.dataframe(data, **{"width": "stretch", "alt": "Data table", **kw})
 
 
-def open_asset():
-    """Row selected in the priorities table: jump to that asset in the Asset details tab."""
-    rows = ss.prio.selection.rows
-    if rows:
-        ss["d"], ss["tab"] = ss["prio_ids"][rows[0]], "Asset details"
+def go(asset):
+    ss["d"], ss["tab"] = asset, "Asset details"
 
+
+def open_asset(key):
+    """Row selected in a priorities table: jump to that asset in the Asset details tab."""
+    rows = ss[key].selection.rows
+    if rows:
+        go(ss[f"{key}_ids"][rows[0]])
 
 def reset():
     st.session_state.update(fsel=[], tsel=[], period="30", asof=LAST.date())
@@ -165,8 +168,9 @@ with tabs[0]:
         with col.container(border=True):
             st.badge(STATUS[r.level], color={"High": "red", "Medium": "orange", "Low": "green"}[r.level])
             st.markdown(f"**{r.asset_id}** · {r.asset_name}  \n{r.facility}")
-            st.metric("Risk score", f"{r.risk:.0f}", None if pd.isna(r.change) else f"{r.change:+.1f} vs 7 d earlier", delta_color="inverse")
+            st.markdown(f"### {r.risk:.0f} risk" + ("" if pd.isna(r.change) else f"  \n{":red" if r.change > 0 else ":green"}[{r.change:+.1f} vs 7 d earlier]"))
             st.caption(r.explanation)
+            st.button("Investigate", key=f"go_{r.asset_id}", on_click=go, args=(r.asset_id,), icon=":material/arrow_forward:", width="stretch")
 
     for col, (lbl, val, sub, delta) in zip(st.columns(4), [
             ("Assets monitored", len(T), f"Across {T.facility.nunique()} facilities", None),
@@ -181,7 +185,7 @@ with tabs[0]:
         top = T.head(10).reset_index(drop=True)
         ss["prio_ids"] = list(top.asset_id)
         table(tint(top.assign(rank=top.index + 1)[["rank", "asset_id", "asset_name", "facility", "driver_label", "peak_z", "risk", "change", "status"]], ["status"]),
-                           hide_index=True, width="stretch", on_select=open_asset, selection_mode="single-row", key="prio", alt="Top 10 maintenance priorities, ranked by risk score. Select a row to open the asset.", column_config={
+                           hide_index=True, width="stretch", on_select=lambda: open_asset("prio"), selection_mode="single-row", key="prio", alt="Top 10 maintenance priorities, ranked by risk score. Select a row to open the asset.", column_config={
             "rank": st.column_config.NumberColumn("#", width="small"), "asset_id": "Asset ID", "asset_name": "Equipment", "facility": "Facility",
             "driver_label": "Main driver", "peak_z": st.column_config.NumberColumn("Peak deviation (σ)", format="%+.1f"),
             "risk": st.column_config.NumberColumn("Risk score (0-100)", format="%.0f"), "change": st.column_config.NumberColumn("Change vs 7 d", format="%+.1f"), "status": "Severity"})
@@ -239,7 +243,7 @@ with tabs[1]:
     c = st.columns([2, 1, 1], vertical_alignment="bottom")
     a = c[0].selectbox("Asset", list(T.asset_id), format_func=lambda x: f"{x} · {T.set_index('asset_id').asset_name[x]}", key="m")
     s = c[1].selectbox("Sensor", ["All"] + SENSORS)
-    truth = c[2].toggle("Show injected truth", False, help="Orange bands = synthetic fault episodes (evaluation labels)")
+    truth = c[2].toggle("Show simulated fault periods", False, help="Orange bands mark the faults injected into the synthetic data. They are evaluation labels, not model output.")
     show(sensor_fig(a, SENSORS if s == "All" else [s], as_of - pd.Timedelta(days=period), as_of, truth), alt=f"Sensor readings for {a} over the last {period} days with model alerts")
     st.caption("Red dots are hours when the model flagged the asset as a whole (all four sensors together), so they appear on every chart, even where that sensor looks normal. Standby hours read low.")
 
@@ -247,25 +251,25 @@ with tabs[2]:
     n = int(st.columns([1, 4])[0].number_input("Show top N assets", 1, len(T), min(15, len(T)), help=f"Shows the N highest-risk assets after filtering ({len(T)} match). Type a number or use +/-."))
     top = T.head(n)
     cols = ["asset_id", "asset_type", "facility", "criticality", "driver_label", "peak_z", "risk", "change", "status", "explanation"]
-    table(tint(top[cols].reset_index(drop=True), ["status"]), width="stretch", hide_index=True, height=min(740, 38 + 35 * n), alt="Maintenance priorities with driver, deviation, risk, severity and explanation", column_config={
+    ss["prio2_ids"] = list(top.asset_id)
+    table(tint(top[cols].reset_index(drop=True), ["status"]), width="stretch", hide_index=True, height=min(740, 38 + 35 * n), on_select=lambda: open_asset("prio2"), selection_mode="single-row", key="prio2", alt="Maintenance priorities with driver, deviation, risk, severity and explanation. Select a row to open the asset.", column_config={
         "asset_id": "Asset", "asset_type": "Type", "facility": "Facility", "criticality": "Criticality", "status": "Status",
         "driver_label": "Main driver", "peak_z": st.column_config.NumberColumn("Peak deviation (σ)", format="%+.1f"), "change": st.column_config.NumberColumn("Change vs 7 d", format="%+.1f"),
         "explanation": st.column_config.TextColumn("Why", width="large"),
         "risk": st.column_config.NumberColumn("Risk (0-100)", format="%.1f")})
     st.download_button("Download ranking (CSV)", top[cols].to_csv(index=False), "maintenance_priorities.csv")
-    st.caption("risk = 100 × (0.5·sensor deviation + 0.3·alert share + 0.2·maintenance overdue) × criticality multiplier (0.7–1.0)")
+    st.caption("Select a row to open that asset in Asset details. risk = 100 × (0.5·sensor deviation + 0.3·alert share + 0.2·maintenance overdue) × criticality multiplier (0.7–1.0)")
 
 with tabs[3]:
     g = T.groupby("facility").agg(avg_risk=("risk", "mean"), critical=("level", lambda x: (x == "High").sum()),
                                   warning=("level", lambda x: (x == "Medium").sum()), alert_share=("alert_share", "mean"), assets=("asset_id", "count")).reset_index()
     a, b = st.columns(2)
     with a.container(border=True):
-        st.subheader("Average risk by facility")
-        show(px.bar(g.sort_values("avg_risk"), x="avg_risk", y="facility", orientation="h", text_auto=".1f", color="avg_risk", color_continuous_scale=SCALE, range_color=(15, 45),
-                    labels={"avg_risk": "Average risk (0-100)", "facility": ""})
-             .update_traces(textfont_color="#0b1220").add_vline(x=25, line_dash="dash", line_color="#f59e0b", annotation_text="Warning 25", annotation_position="top")
-             .add_vline(x=40, line_dash="dash", line_color="#ef4444", annotation_text="Critical 40", annotation_position="top")
-             .update_xaxes(range=[0, 45]).update_layout(height=H, coloraxis_showscale=False, margin=dict(l=0, r=10, t=30, b=0)), alt="Average risk by facility, with warning and critical limits")
+        st.subheader("Assets needing attention by facility")
+        nc = T.groupby(["facility", "status"]).size().reset_index(name="assets")
+        show(px.bar(nc[nc.status != "Normal"], x="assets", y="facility", color="status", orientation="h", text_auto=True,
+                    color_discrete_map={"Critical": COLORS["High"], "Warning": COLORS["Medium"]}, category_orders={"status": ["Critical", "Warning"]}, labels={"assets": "Assets", "facility": "", "status": ""})
+             .update_traces(textfont_color="#0b1220").update_xaxes(dtick=1).update_layout(height=H, margin=dict(l=0, r=10, t=0, b=0), legend=dict(orientation="h", y=1.08)), alt="Number of critical and warning assets per facility")
     with b.container(border=True):
         st.subheader("Average risk by facility and equipment type")
         pv = T.pivot_table(index="facility", columns="asset_type", values="risk", aggfunc="mean").round(1)
@@ -293,15 +297,19 @@ with tabs[4]:
         c[1].metric("Facility", row.facility)
         c[2].metric("Criticality", f"{row.criticality}/5")
         c[3].metric("Installed", int(row.install_year))
-    st.markdown(f"**Diagnostic findings, 7 days to {as_of:%d %b %Y}.** {row.explanation}. The chart below shows the reading right now, which can be lower than the peak.")
-    now = R[(R.asset_id == a) & (R.timestamp == as_of)]
-    if not now.empty:
-        z = now[P.RC].iloc[0].rename(lambda x: DRV[x[3:]]).rename("Deviation (σ)").reset_index()
-        z["Level"] = z["Deviation (σ)"].abs().map(lambda v: "Outside ±3σ" if v > 3 else "Within normal range")
-        show(px.bar(z, x="Deviation (σ)", y="index", orientation="h", color="Level", color_discrete_map={"Outside ±3σ": COLORS["High"], "Within normal range": "#64748b"},
-                               title=f"Deviation from own baseline right now (6 h mean to {as_of:%d %b %Y %H:%M}); red = outside ±3σ")
-                        .add_vline(x=0, line_color="#94a3b8").add_vline(x=3, line_dash="dash", line_color="#475569").add_vline(x=-3, line_dash="dash", line_color="#475569")
-                        .update_layout(height=250, yaxis_title=None, showlegend=False), width="stretch")
+    st.markdown(f"**Why flagged.** {row.explanation}.")
+    w7 = R[(R.asset_id == a) & (R.timestamp > as_of - WEEK) & (R.timestamp <= as_of)]
+    if not w7.empty:
+        peak = w7[P.RC].apply(lambda s: s.loc[s.abs().idxmax()] if s.notna().any() else float("nan"))
+        last = w7[P.RC].iloc[-1]
+        z = pd.DataFrame({"Sensor": [DRV[c[3:]] for c in P.RC] * 2, "Deviation (σ)": list(peak) + list(last),
+                          "Reading": ["Peak, last 7 days"] * 4 + [f"Latest (6 h mean to {as_of:%d %b %H:%M})"] * 4})
+        show(px.bar(z, x="Deviation (σ)", y="Sensor", color="Reading", orientation="h", barmode="group",
+                    color_discrete_map={"Peak, last 7 days": "#e5edf5", f"Latest (6 h mean to {as_of:%d %b %H:%M})": "#64748b"},
+                    title="Deviation from own baseline: 7-day peak vs latest reading (dashed lines = ±3σ)")
+             .add_vline(x=0, line_color="#94a3b8").add_vline(x=3, line_dash="dash", line_color="#475569").add_vline(x=-3, line_dash="dash", line_color="#475569")
+             .update_layout(height=300, yaxis_title=None, legend=dict(orientation="h", y=-0.2, title=None)), alt="Peak versus latest deviation from baseline for each sensor")
+        st.caption("A high peak with a low latest value means the condition has eased since; both high means it is still ongoing.")
     show(sensor_fig(a, SENSORS, as_of - pd.Timedelta(days=30), as_of), width="stretch", key="detail_trend")
     st.subheader("Maintenance history")
     mh = D["maint"][D["maint"].asset_id == a].sort_values("date", ascending=False).drop(columns=["asset_id"])

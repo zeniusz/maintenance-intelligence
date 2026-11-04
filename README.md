@@ -34,8 +34,11 @@ Both versions are Streamlit apps on the same analysis (`mi/`), so the risk score
 | Accessibility | Charts and tables without text descriptions | Every chart and table has an accessible description; sentence-case labels | Screen-reader users can identify each element. |
 | First screen | Four totals, then a table | **Inspect next**: the top three assets with severity, risk, change versus 7 days earlier and the reason; KPIs show change versus 7 days earlier | Answers what to inspect first, and whether it is getting worse. |
 | Sharing | Only the tab was in the link | Filters, risk date and selected asset are also in the link (?site=..&period=7&asset=A061) | A colleague opens the same view. |
-| Facility view | Average risk per facility, which hides a single bad asset | Count of critical and warning assets per facility, with averages kept in the table | One failing asset is no longer averaged away. |
+| Facility view | Average risk per facility, which hides a single bad asset | Count of critical and warning assets per facility on the Overview and Facility comparison tabs, with averages kept in the table and heatmap | One failing asset is no longer averaged away. |
 | Alert wording | Red dots on every sensor chart without explanation | Caption explains the model flags the whole asset, so dots appear on every chart | Avoids reading a sensor-specific fault into them. |
+| Acting on a signal | Cards and tables were read-only | Each Inspect next card has an **Investigate** button; rows in both priorities tables open the asset | One click from a signal to its evidence. |
+| Asset details | A 'right now' chart that seemed to contradict the 7-day peak | **7-day peak vs latest reading** side by side per sensor, with a plain-language caption | Explains how a recovering asset can still carry a high risk score. |
+| Sensor labels | 'Show injected truth' | 'Show simulated fault periods' | Plain wording for an evaluation setting. |
 | Small screens | Status badges wrapped over several lines | Badges stay on one line and stack cleanly on phones | Usable on a phone. |
 
 | Version 1 | Version 2 |
