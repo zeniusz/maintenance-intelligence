@@ -12,7 +12,7 @@ from mi.data_gen import SENSORS
 from mi.weather import get_current
 
 st.set_page_config("Maintenance Intelligence", ":material/monitoring:", layout="wide", initial_sidebar_state="collapsed")
-st.markdown("<style>.block-container { padding: 2.4rem 2rem 2rem; max-width: 1600px; } @media (max-width: 768px) { .block-container { padding: 2.2rem .75rem 2rem; } }</style>", unsafe_allow_html=True)  # no native setting for page padding
+st.markdown("<style>.block-container { padding: 2.4rem 2rem 2rem; max-width: 1600px; } .st-key-top1 { border-left: 3px solid #ef4444; } @media (max-width: 768px) { .block-container { padding: 2.2rem .75rem 2rem; } }</style>", unsafe_allow_html=True)  # no native setting for page padding
 pio.templates["mi"] = pio.templates["plotly_dark"]
 pio.templates["mi"].layout.update(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_family="Inter",
                                   margin=dict(l=10, r=30, t=40, b=10), title_font_size=14, hovermode="x unified")
@@ -114,16 +114,14 @@ def reset():
 live_df, fetched = live(fac)
 now = pd.Timestamp.now("UTC")
 data_ok = now - LAST.tz_localize("UTC") < pd.Timedelta(hours=2)
-h = st.columns([2, 1.4, 1.4, 0.8], vertical_alignment="center")
+h = st.columns([2.4, 2.6, 0.9], vertical_alignment="center")
 h[0].title("Maintenance Intelligence")
 with h[1]:
     st.badge("Live data" if data_ok else "Historical simulation · synthetic data", color="green" if data_ok else "blue")
     st.caption(f"Asset data as of **{LAST:%d %b %Y %H:%M}**")
 with h[2]:
-    st.badge("Live weather" if not live_df.empty else "Sync failed", color="green" if not live_df.empty else "red")
-    st.caption("Weather (Open-Meteo), context only" + ("" if not live_df.empty else "  \nlive feed unavailable"))
-with h[3]:
     with st.popover("About · refresh", width="stretch"):
+        st.markdown(f"**Live weather:** {'available' if not live_df.empty else 'unavailable (sync failed), risk results are not affected'}. Context only.")
         if st.button("Refresh weather", width="stretch", help="Re-fetches live weather. Asset data is a fixed synthetic snapshot."):
             live.clear()
             st.rerun()
@@ -151,7 +149,7 @@ if "seeded" not in ss:
         pass
 
 # ---- Sites are always visible (empty = all sites; the line under the controls says exactly what is in view)
-fsel = st.multiselect("Sites", list(fac.name), key="fsel", placeholder="All sites (select one or more to review them together)") or list(fac.name)
+fsel = st.multiselect("Sites", list(fac.name), key="fsel", label_visibility="collapsed", placeholder="All sites (select one or more to review them together)") or list(fac.name)
 if ss.pop("stale_link", False):
     st.info("Some saved selections in this link are no longer available. The view has been updated.")
 n_active = bool(ss.get("tsel")) + (ss.get("period", "30") != "30") + (ss.get("asof", LAST.date()) != LAST.date())
@@ -204,21 +202,22 @@ tabs = st.tabs(["Overview", "Sensor monitoring", "Maintenance priorities", "Faci
 
 with tabs[0]:
     st.subheader("Inspect next")
+    st.caption("Risk score is a 0 to 100 priority index for ranking inspections. It is not a probability of failure.")
     flagged = T[T.level != "Low"].head(3)  # only assets that actually need attention
     if flagged.empty:
         st.success("No assets are flagged in this view: every asset is Normal (risk 25 or less).")
-    for col, r in zip(st.columns(3), flagged.itertuples()):
-        with col.container(border=True, gap="xsmall"):
-            st.badge(STATUS[r.level], color={"High": "red", "Medium": "orange", "Low": "green"}[r.level])
+    for i, (col, r) in enumerate(zip(st.columns(3), flagged.itertuples())):
+        with col.container(border=True, gap="xsmall", key="top1" if i == 0 else None):  # the highest-ranked asset gets a subtle accent edge
+            top_l, top_r = st.columns([1, 2], vertical_alignment="center")
+            top_l.badge(STATUS[r.level], color={"High": "red", "Medium": "orange", "Low": "green"}[r.level])
+            top_r.caption(r.facility)
             st.markdown(f"**{r.asset_id} · {r.asset_type}**")
-            st.caption(r.facility)
-            st.metric("Risk score", f"{r.risk:.1f} / 100", None if pd.isna(r.change) else f"{r.change:+.1f} pts vs 7 d earlier", delta_color="inverse")
+            st.metric("Risk score", f"{r.risk:.1f} / 100", None if pd.isna(r.change) else f"{r.change:+.1f} pts vs 7 d earlier", delta_color="inverse",
+                      help="A 0 to 100 priority index for ranking inspections. It is not a probability of failure.")
             st.divider()
             left, right = st.columns(2)
-            left.caption("Main driver")
-            left.markdown(f"**{r.driver_label} {r.peak_z:+.1f}σ**")
-            right.caption("Hours alerted (last 7 d)")
-            right.markdown(f"**{r.alert_share:.0%}**")
+            left.markdown(f":gray[Main driver]  \n**{r.driver_label} {r.peak_z:+.1f}σ**")
+            right.markdown(f":gray[Hours alerted (last 7 d)]  \n**{r.alert_share:.0%}**")
             st.button("Investigate", key=f"go_{r.asset_id}", on_click=go, args=(r.asset_id,), icon=":material/arrow_forward:", width="stretch")
 
     for col, (lbl, val, sub, delta) in zip(st.columns(4), [
@@ -425,6 +424,16 @@ with tabs[4]:
     if not w7.empty:
         peak = w7[P.RC].apply(lambda s: s.loc[s.abs().idxmax()] if s.notna().any() else float("nan"))
         last = w7[P.RC].iloc[-1]
+        lw, pw = last.abs().idxmax(), f"zr_{row.driver}"  # pw = the asset's main driver, the same sensor the cards and tables report
+        with st.container(border=True):
+            st.subheader("Condition trend")
+            if abs(last[lw]) > 3:
+                st.markdown(f":red[**Still abnormal.**] The latest reading is outside the ±3σ normal range: {DRV[lw[3:]]} {last[lw]:+.1f}σ.")
+            elif abs(peak[pw]) > 3:
+                st.markdown(f":orange[**Eased since the peak.**] The main driver, {DRV[pw[3:]]}, reached {peak[pw]:+.1f}σ in the last 7 days; the latest reading is back within the normal range ({DRV[pw[3:]]} {last[pw]:+.1f}σ).")
+            else:
+                st.markdown(f":green[**Within the normal range.**] Main driver in the last 7 days: {DRV[pw[3:]]}, peak {peak[pw]:+.1f}σ.")
+            st.caption(f"Latest = 6-hour mean ending {as_of:%d %b %Y %H:%M} (the end of the assessed period, not today). Normal range = within ±3σ of the asset's own baseline.")
         z = pd.DataFrame({"Sensor": [DRV[c[3:]] for c in P.RC] * 2, "Deviation (σ)": list(peak) + list(last),
                           "Reading": ["Peak, last 7 days"] * 4 + [f"Latest (6 h mean to {as_of:%d %b %H:%M})"] * 4})
         show(px.bar(z, x="Deviation (σ)", y="Sensor", color="Reading", orientation="h", barmode="group",
@@ -432,10 +441,7 @@ with tabs[4]:
                     title="Deviation from own baseline: 7-day peak vs latest reading (dashed lines = ±3σ)")
              .add_vline(x=0, line_color="#94a3b8").add_vline(x=3, line_dash="dash", line_color="#475569").add_vline(x=-3, line_dash="dash", line_color="#475569")
              .update_layout(height=300, yaxis_title=None, legend=dict(orientation="h", y=-0.2, title=None)), alt="Peak versus latest deviation from baseline for each sensor")
-        worst = last.abs().idxmax()
-        st.markdown(f"**Latest reading** (6 h mean to {as_of:%d %b %Y %H:%M}): largest deviation is **{DRV[worst[3:]]} {last[worst]:+.1f}σ**, "
-                    f"{'outside' if abs(last[worst]) > 3 else 'within'} the ±3σ normal range. **7-day peak:** {DRV[peak.abs().idxmax()[3:]]} {peak[peak.abs().idxmax()]:+.1f}σ.")
-        st.caption("A high peak with a low latest value means the condition has eased since; both high means it is still ongoing. \"Latest\" is the end of the assessed period, not today.")
+        st.caption("A high peak with a low latest value means the condition has eased since; both high means it is still ongoing.")
     st.caption("Sensor trend: always the last 30 days (the chart window setting applies to Sensor monitoring).")
     show(sensor_fig(a, SENSORS, as_of - pd.Timedelta(days=30), as_of), width="stretch", key="detail_trend")
     st.subheader("Maintenance history")

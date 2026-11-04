@@ -55,12 +55,33 @@ Both versions are Streamlit apps on the same analysis (`mi/`), so the risk score
 | Choosing an asset | A plain list of IDs, and 'Why flagged' shown even for healthy assets | Each option shows type, site, risk and severity, highest risk first; healthy assets say 'Reading summary (not flagged)'; optional comparison of up to 4 assets in Asset details and overlay of up to 4 assets on one sensor | The assets that need attention are at the top, and several can be reviewed together. |
 | Honest empty and edge states | 'Inspect next' always listed three assets, even if all were Normal; empty charts could crash; a shared link to an unavailable asset silently changed asset | Only flagged assets appear in 'Inspect next', with a clear message when none are; empty charts show a note; an unavailable asset in a link triggers a notice; no chart is drawn without readings; the 7-day and 30-day windows are labelled | The screen never implies a problem that is not there. |
 | Telling someone | No way to pass an asset on | 'Compose email' on Asset details opens your email app with a ready-made message (asset, severity, risk, reason, date, and a link that restores the same sites, filters, window and asset); a 'Copy the message text instead' box is the fallback | Nothing is sent automatically and no recipients are invented; real notifications are listed under adoption gaps. |
+| Control-centre feel | Tall header with two status blocks, three roomy cards | One compact header row (weather status moved into About), a collapsed Sites label, shorter cards with the top asset marked by an accent edge, and a note that the risk score is a ranking index, not a probability | More of the first screen is decision content. |
+| Condition trend | Peak and latest shown only as a chart | A short Condition trend statement above the charts (still abnormal, eased since the peak, or within the normal range), using the same main driver as the cards | Separates a past spike from an ongoing problem. |
 | Small screens | Status badges wrapped over several lines | Badges stay on one line and stack cleanly on phones | Usable on a phone. |
 
 | Version 1 | Version 2 |
 |---|---|
 | ![v1 priorities](docs/screenshots/v1-maintenance-priorities.png) | ![v2 priorities](docs/screenshots/v2-maintenance-priorities.png) |
 | ![v1 asset](docs/screenshots/v1-asset-details.png) | ![v2 asset](docs/screenshots/v2-asset-details.png) |
+## Walkthrough: one investigation in about 90 seconds
+
+1. **Start on the Overview.** The header says the data is a *historical simulation*, so nothing looks live by accident. *Inspect next* shows the three assets that need attention, each with its risk score, change versus a week earlier, main driver and hours alerted.
+2. **Pick the top asset (A013, Heat Exchanger Fan).** Its card reads: risk 69.6 of 100, up 49.2 points in a week, temperature +9.4σ above its own normal. Press **Investigate**.
+3. **Asset details.** *Condition trend* answers the question an engineer asks first: is it still happening? Here it says the problem has *eased since the peak*, and the chart shows the 7-day peak next to the latest reading.
+4. **Check the evidence.** Open **Sensor monitoring** (it keeps the same asset and opens on the sensor that drives the risk). Red dots mark the hours the model flagged; switch on the simulated fault periods to see what was injected.
+5. **Compare.** On Asset details, add one or two other assets under *Compare with other assets*.
+6. **Pass it on.** Press **Compose email**. Your email app opens with the asset, severity, risk, reason, date and a link that reopens exactly this view (sites, filters, window, asset). Nothing is sent for you.
+7. **Look wider.** *Maintenance priorities* ranks everything; *Facility comparison* counts critical and warning assets per site instead of averaging them away.
+
+To record it: start the app, record the screen at 1080p, follow the seven steps above and keep it under 90 seconds.
+
+## Product decisions
+
+- **One question per screen area.** Overview answers "what first?", Asset details answers "why, and is it still happening?".
+- **Colour only where it carries meaning.** Red, amber and teal always come with a word (Critical, Warning, Normal).
+- **No invented outputs.** There are no recommended actions, urgency labels, failure probabilities or remaining-life estimates, because the data cannot support them.
+- **Honest about what it is.** Synthetic data, a ranking index and not a failure prediction, stated in the header and the About menu.
+- **Shareable by design.** The page address holds the sites, filters, tab and asset.
 ## The problem
 
 An operator of oil, gas and energy plants may have thousands of assets sending readings every hour. Nobody can watch every chart, and a fixed alarm limit (for example "vibration > X") is a poor fit: a healthy large compressor and a healthy small pump have very different normal values, and weather shifts temperatures even when nothing is wrong. The questions this project answers are:
