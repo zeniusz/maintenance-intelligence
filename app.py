@@ -16,17 +16,17 @@ st.set_page_config("Maintenance Intelligence", "🛠️", layout="wide", initial
 st.markdown("""<style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 html, body, .stApp, button, input { font-family: 'Inter', sans-serif; }
-.block-container { padding: 3.2rem 2rem 2rem; max-width: 1500px; }
+.block-container { padding: 3rem 2rem 2rem; max-width: 1600px; }
 h1 { font-size: 1.5rem !important; font-weight: 600 !important; padding: 0 !important; }
 h3 { font-size: 1rem !important; font-weight: 600 !important; padding: 0 0 .4rem !important; }
-[class*="st-key-card"] { background: #111b2e; border: 1px solid #1f2d44; border-radius: 10px; padding: .9rem 1rem; }
+[class*="st-key-card"] { background: #111b2e; border: 1px solid #1f2d44; border-radius: 5px; padding: .8rem 1rem; }
 [data-testid="stMetricLabel"] p { font-size: .75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; }
 [data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 1.9rem; }
 [data-testid="stMetricValue"] > div { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.2; }
 button[data-baseweb="tab"][aria-selected="true"] { font-weight: 600; color: #2dd4bf; }
 [data-baseweb="tab-highlight"] { background: #2dd4bf; height: 2px; }
-[data-testid="stDataFrame"] { border: 1px solid #1f2d44; border-radius: 8px; overflow: hidden; }
-[data-testid="stPlotlyChart"] { background: #111b2e; border: 1px solid #1f2d44; border-radius: 10px; padding: .5rem; }
+[data-testid="stDataFrame"] { border: 1px solid #1f2d44; border-radius: 5px; overflow: hidden; }
+[data-testid="stPlotlyChart"] { background: #111b2e; border: 1px solid #1f2d44; border-radius: 5px; padding: .5rem; }
 [class*="st-key-card"] [data-testid="stPlotlyChart"] { background: transparent; border: 0; padding: 0; }
 .fresh { display: flex; gap: 1.5rem; justify-content: flex-end; font-size: .78rem; color: #94a3b8; line-height: 1.35; }
 .fresh b { color: #e5edf5; font-weight: 500; }
@@ -35,7 +35,9 @@ button[data-baseweb="tab"][aria-selected="true"] { font-weight: 600; color: #2dd
 </style>""", unsafe_allow_html=True)
 pio.templates["mi"] = pio.templates["plotly_dark"]
 pio.templates["mi"].layout.update(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_family="Inter",
-                                  margin=dict(l=10, r=30, t=40, b=10), title_font_size=14)
+                                  margin=dict(l=10, r=30, t=40, b=10), title_font_size=14, hovermode="x unified")
+pio.templates["mi"].layout.xaxis.update(showgrid=False)
+pio.templates["mi"].layout.yaxis.update(gridcolor="#233047", zeroline=False)
 px.defaults.template = "mi"
 px.defaults.color_continuous_scale = "Teal"
 
@@ -58,6 +60,8 @@ TAG = {"Low": ":green[Normal]", "Medium": ":orange[Warning]", "High": ":red[Crit
 SCALE = [COLORS["Low"], COLORS["Medium"], COLORS["High"]]  # 15 -> 45 spans the Normal / Warning / Critical bands (25, 40)
 LAST = R.timestamp.max()
 H = 330  # standard chart height
+LBL = {"temperature_c": "Temperature (°C)", "vibration_mm_s": "Vibration (mm/s)", "pressure_bar": "Pressure (bar)", "power_kw": "Power (kW)"}
+DRV = {k: v.split(" (")[0] for k, v in LBL.items()}
 
 
 @st.cache_data
@@ -67,7 +71,7 @@ def risks(as_of):
 
 def sensor_fig(a, sensors, start, end, truth=True):
     d = R[(R.asset_id == a) & R.timestamp.between(start, end)]
-    fig = make_subplots(rows=len(sensors), cols=1, shared_xaxes=True, subplot_titles=sensors, vertical_spacing=0.08)
+    fig = make_subplots(rows=len(sensors), cols=1, shared_xaxes=True, subplot_titles=[LBL[s] for s in sensors], vertical_spacing=0.08)
     ep = D["episodes"][(D["episodes"].asset_id == a) & (D["episodes"].end >= start) & (D["episodes"].start <= end)]
     for i, s in enumerate(sensors, 1):
         fig.add_scatter(x=d.timestamp, y=d[s], mode="lines", line_width=1, name=s, showlegend=False, row=i, col=1)
@@ -126,7 +130,7 @@ T = T[T.facility.isin(fsel) & T.asset_type.isin(tsel)]
 if T.empty:
     st.warning("No assets match the filters.")
     st.stop()
-T = T.assign(status=T.level.map(STATUS))
+T = T.assign(status=T.level.map(STATUS), driver_label=T.driver.map(DRV))
 n_alerts = int(R.alert[R.asset_id.isin(T.asset_id) & (R.timestamp > as_of - pd.Timedelta(days=period)) & (R.timestamp <= as_of)].sum())
 n_crit = int((T.level == "High").sum())
 
@@ -144,17 +148,17 @@ with tabs[0]:
 
     with st.container(border=True, key="card_prio"):
         st.subheader("Maintenance priorities")
-        top = T.head(8).reset_index(drop=True)
-        sel = st.dataframe(top.assign(rank=top.index + 1)[["rank", "asset_id", "asset_name", "facility", "risk", "status", "explanation"]],
+        top = T.head(10).reset_index(drop=True)
+        sel = st.dataframe(top.assign(rank=top.index + 1)[["rank", "asset_id", "asset_name", "facility", "driver_label", "peak_z", "risk", "status"]],
                            hide_index=True, width="stretch", on_select="rerun", selection_mode="single-row", key="prio", column_config={
             "rank": st.column_config.NumberColumn("#", width="small"), "asset_id": "Asset ID", "asset_name": "Equipment", "facility": "Facility",
-            "risk": st.column_config.ProgressColumn("Risk score", min_value=0, max_value=100, format="%.0f"), "status": "Severity",
-            "explanation": st.column_config.TextColumn("Why flagged", width="large")})
+            "driver_label": "Main driver", "peak_z": st.column_config.NumberColumn("Peak deviation (σ)", format="%+.1f"),
+            "risk": st.column_config.ProgressColumn("Risk score", min_value=0, max_value=100, format="%.0f"), "status": "Severity"})
         if sel.selection.rows:
             ss["d"] = top.asset_id[sel.selection.rows[0]]
-            st.caption(f"Selected **{ss['d']}**: open the *Asset Details* tab for its full view.")
+            st.caption(f"**{ss['d']}**: {top.set_index('asset_id').explanation[ss['d']]}. Open the Asset Details tab for the full view.")
         else:
-            st.caption("Ranked by risk score. Select a row to jump to that asset's details. Recommended actions and due dates are not in the data, so none are shown.")
+            st.caption("Ranked by risk score. Select a row to see why it was flagged.")
 
     c1, c2, c3 = st.columns([1.3, 1, 1.1])
     with c1.container(border=True, key="card_map"):
@@ -206,20 +210,17 @@ with tabs[1]:
     c = st.columns([2, 1, 1])
     a = c[0].selectbox("Asset", T.asset_id, format_func=lambda x: f"{x} · {T.set_index('asset_id').asset_name[x]}", key="m")
     s = c[1].selectbox("Sensor", ["All"] + SENSORS)
-    truth = c[2].checkbox("Show injected truth", True, help="Orange bands = synthetic fault episodes (evaluation labels)")
+    truth = c[2].checkbox("Show injected truth", False, help="Orange bands = synthetic fault episodes (evaluation labels)")
     st.plotly_chart(sensor_fig(a, SENSORS if s == "All" else [s], as_of - pd.Timedelta(days=period), as_of, truth), width="stretch")
     st.caption("Red dots = Isolation Forest alerts. Idle (standby) hours show as low readings.")
 
 with tabs[2]:
     n = int(st.number_input("Show top N assets", 1, len(T), min(15, len(T)), help=f"Shows the N highest-risk assets after filtering ({len(T)} match). Type a number or use +/-."))
     top = T.head(n)
-    st.plotly_chart(px.bar(top, x="risk", y="asset_id", color="status", orientation="h", hover_data=["facility", "asset_type"],
-                           color_discrete_map={"Normal": COLORS["Low"], "Warning": COLORS["Medium"], "Critical": COLORS["High"]},
-                           title=f"Top {n} assets by risk score, as of {as_of:%d %b %Y}", labels={"risk": "Risk score (0-100)", "asset_id": "Asset", "status": "Severity"})
-                    .update_yaxes(autorange="reversed", dtick=1).update_layout(height=max(300, 24 * n + 120), legend=dict(orientation="h", y=1.02, x=0.97, xanchor="right", yanchor="bottom", title=None)), width="stretch")
-    cols = ["asset_id", "asset_type", "facility", "criticality", "risk", "status", "explanation"]
-    st.dataframe(top[cols].reset_index(drop=True), width="stretch", hide_index=True, column_config={
+    cols = ["asset_id", "asset_type", "facility", "criticality", "driver_label", "peak_z", "risk", "status", "explanation"]
+    st.dataframe(top[cols].reset_index(drop=True), width="stretch", hide_index=True, height=min(740, 38 + 35 * n), column_config={
         "asset_id": "Asset", "asset_type": "Type", "facility": "Facility", "criticality": "Criticality", "status": "Status",
+        "driver_label": "Main driver", "peak_z": st.column_config.NumberColumn("Peak deviation (σ)", format="%+.1f"),
         "explanation": st.column_config.TextColumn("Why", width="large"),
         "risk": st.column_config.ProgressColumn("Risk", min_value=0, max_value=100, format="%.1f")})
     st.download_button("Download ranking (CSV)", top[cols].to_csv(index=False), "maintenance_priorities.csv")
@@ -249,12 +250,15 @@ with tabs[4]:
         c[1].metric("Facility", row.facility)
         c[2].metric("Criticality", f"{row.criticality}/5")
         c[3].metric("Installed", int(row.install_year))
-    st.info("**Why this alert?** " + row.explanation)
+    st.markdown(f"**Diagnostic findings, 7 days to {as_of:%d %b %Y}.** {row.explanation}. The chart below shows the reading right now, which can be lower than the peak.")
     now = R[(R.asset_id == a) & (R.timestamp == as_of)]
     if not now.empty:
-        z = now[P.RC].iloc[0].rename(lambda x: x[3:]).rename("σ from baseline").reset_index()
-        st.plotly_chart(px.bar(z, x="σ from baseline", y="index", orientation="h", title="Current deviation from own baseline (6 h mean)")
-                        .update_layout(height=250, yaxis_title=None), width="stretch")
+        z = now[P.RC].iloc[0].rename(lambda x: DRV[x[3:]]).rename("Deviation (σ)").reset_index()
+        z["Level"] = z["Deviation (σ)"].abs().map(lambda v: "Outside ±3σ" if v > 3 else "Within normal range")
+        st.plotly_chart(px.bar(z, x="Deviation (σ)", y="index", orientation="h", color="Level", color_discrete_map={"Outside ±3σ": COLORS["High"], "Within normal range": "#64748b"},
+                               title=f"Deviation from own baseline right now (6 h mean to {as_of:%d %b %Y %H:%M}); red = outside ±3σ")
+                        .add_vline(x=0, line_color="#94a3b8").add_vline(x=3, line_dash="dash", line_color="#475569").add_vline(x=-3, line_dash="dash", line_color="#475569")
+                        .update_layout(height=250, yaxis_title=None, showlegend=False), width="stretch")
     st.plotly_chart(sensor_fig(a, SENSORS, as_of - pd.Timedelta(days=30), as_of), width="stretch", key="detail_trend")
     st.subheader("Maintenance history")
     mh = D["maint"][D["maint"].asset_id == a].sort_values("date", ascending=False).drop(columns=["asset_id"])

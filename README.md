@@ -4,8 +4,35 @@ An explainable predictive-maintenance prototype. It turns six months of hourly s
 
 Built with Python 3.12 · Pandas · NumPy · scikit-learn · Streamlit · Plotly · Requests · Pytest.
 
-![Overview](docs/screenshots/overview.png)
+![Dashboard overview](docs/screenshots/v2-overview.png)
 
+## Two versions of the dashboard
+
+Both versions are Streamlit apps on the same analysis (`mi/`), so the risk scores and explanations are identical. Version 2 is a design iteration based on a review of version 1's screenshots.
+
+### Version 1: first working dashboard
+
+![Version 1 overview](docs/screenshots/v1-overview.png)
+
+### Version 2: current (`app.py`)
+
+![Version 2 overview](docs/screenshots/v2-overview.png)
+
+### What changed, and why
+
+| Area | Version 1 | Version 2 | Why |
+|---|---|---|---|
+| Page space | Large empty band above the title | Compact header with freshness status inline | More of the page is useful content. |
+| Priorities table | Risk, severity and a long reason that was cut off | Adds **main driver** and **peak deviation (σ)**; the full reason appears when you select a row | Engineers see what is wrong at a glance, and nothing is truncated. |
+| Maintenance Priorities tab | Large bar chart repeating the table beneath it | The table only, sized to the number of assets shown | The chart showed the same data twice. |
+| Sensor charts | Raw field names (`temperature_c`), default colours, injected-fault overlay always on | Names with units (Temperature (°C)), shared hover, light grid, fault overlay off by default | Operational view first; the evaluation overlay is opt-in. |
+| Asset details | Purple chart, large blue banner, and a "now" value that seemed to contradict the 7-day peak | Chart centred on zero with ±3σ limits, red only outside them; findings labelled "7 days to <date>" and the chart labelled "right now" | The two numbers measure different things and now say so. |
+| Styling | 10 px rounded boxes | 5 px corners and fewer nested borders | Less of the generic dashboard look. |
+
+| Version 1 | Version 2 |
+|---|---|
+| ![v1 priorities](docs/screenshots/v1-maintenance-priorities.png) | ![v2 priorities](docs/screenshots/v2-maintenance-priorities.png) |
+| ![v1 asset](docs/screenshots/v1-asset-details.png) | ![v2 asset](docs/screenshots/v2-asset-details.png) |
 ## The problem
 
 An operator of oil, gas and energy plants may have thousands of assets sending readings every hour. Nobody can watch every chart, and a fixed alarm limit (for example "vibration > X") is a poor fit: a healthy large compressor and a healthy small pump have very different normal values, and weather shifts temperatures even when nothing is wrong. The questions this project answers are:
@@ -29,7 +56,7 @@ An operator of oil, gas and energy plants may have thousands of assets sending r
 
 The Isolation Forest says "this hour looks unlike this asset's normal". It does **not** say "this asset will fail in N days". Predicting failures needs labelled failure histories and many more failures than six months provide. The risk score therefore prioritises *inspection*, and the dashboard says so.
 
-## The dashboard
+## The dashboard (version 2)
 
 | Tab | What it shows |
 |---|---|
@@ -43,9 +70,9 @@ Severity is always colour **and** text: **Normal** (risk < 25), **Warning** (25-
 
 | Sensor Monitoring | Maintenance Priorities |
 |---|---|
-| ![Sensors](docs/screenshots/sensor-monitoring.png) | ![Priorities](docs/screenshots/maintenance-priorities.png) |
+| ![Sensors](docs/screenshots/v2-sensor-monitoring.png) | ![Priorities](docs/screenshots/v2-maintenance-priorities.png) |
 | **Facility Comparison** | **Asset Details** |
-| ![Facilities](docs/screenshots/facility-comparison.png) | ![Asset](docs/screenshots/asset-details.png) |
+| ![Facilities](docs/screenshots/v2-facility-comparison.png) | ![Asset](docs/screenshots/v2-asset-details.png) |
 
 ### Data freshness, stated honestly
 The header shows the asset-data as-of time and the pipeline-run time separately from the weather fetch time. The asset data is a fixed synthetic snapshot, so it is labelled **Delayed · demo snapshot**, never "live". Weather shows **Current** or **Sync failed** from the actual API response.
