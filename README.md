@@ -30,6 +30,8 @@ Both versions are Streamlit apps on the same analysis (`mi/`), so the risk score
 | Styling | 10 px rounded boxes | 5 px corners and fewer nested borders | Less of the generic dashboard look. |
 | Severity colour | Teal progress bar even for Critical assets; severity word uncoloured | Severity cells tinted red/amber, with the word kept; charts use the same three fixed bands instead of a blended gradient | Colour now means the same everywhere and is never the only cue. |
 | Facility Comparison | Raw field names, a red/cream scale, slanted labels | Readable labels, horizontal bars, shared severity colours, formatted table | Consistent with the rest of the app. |
+| Navigation | Select a row, then find and open the Asset Details tab yourself | Selecting a row opens that asset in Asset details; the active tab is saved in the URL so a link or reload keeps your place | Fewer steps, and views can be shared. |
+| Accessibility | Charts and tables without text descriptions | Every chart and table has an accessible description; sentence-case labels | Screen-reader users can identify each element. |
 | Small screens | Status badges wrapped over several lines | Badges stay on one line and stack cleanly on phones | Usable on a phone. |
 
 | Version 1 | Version 2 |
@@ -64,17 +66,17 @@ The Isolation Forest says "this hour looks unlike this asset's normal". It does 
 | Tab | What it shows |
 |---|---|
 | **Overview** | Data-freshness header, four KPIs, ranked priorities table, facility risk map, risk by facility, facility x asset-type heatmap, live weather per site, model performance. |
-| **Sensor Monitoring** | Any asset and sensor over 7/30/90 days, red dots for model alerts, orange bands for the injected (true) fault episodes. |
-| **Maintenance Priorities** | Top-N assets by risk with severity colours, full table with explanations, CSV download. |
-| **Facility Comparison** | Risk by facility and by facility x type, plus weather history. |
-| **Asset Details** | Risk, criticality, "why this alert?", current sensor deviation, 30-day trend and maintenance history. |
+| **Sensor monitoring** | Any asset and sensor over 7/30/90 days, red dots for model alerts, orange bands for the injected (true) fault episodes. |
+| **Maintenance priorities** | Top-N assets by risk with severity colours, full table with explanations, CSV download. |
+| **Facility comparison** | Risk by facility and by facility x type, plus weather history. |
+| **Asset details** | Risk, criticality, "why this alert?", current sensor deviation, 30-day trend and maintenance history. |
 
 Severity is always colour **and** text: **Normal** (risk < 25), **Warning** (25-40), **Critical** (> 40). The filters (facility, asset type, 7/30/90-day period, risk date) apply to every tab.
 
-| Sensor Monitoring | Maintenance Priorities |
+| Sensor monitoring | Maintenance priorities |
 |---|---|
 | ![Sensors](docs/screenshots/v2-sensor-monitoring.png) | ![Priorities](docs/screenshots/v2-maintenance-priorities.png) |
-| **Facility Comparison** | **Asset Details** |
+| **Facility comparison** | **Asset details** |
 | ![Facilities](docs/screenshots/v2-facility-comparison.png) | ![Asset](docs/screenshots/v2-asset-details.png) |
 
 ### Data freshness, stated honestly
