@@ -243,7 +243,7 @@ with tabs[0]:
 
 with tabs[1]:
     c = st.columns([2, 1, 1], vertical_alignment="bottom")
-    a = c[0].selectbox("Asset", list(T.asset_id), format_func=lambda x: f"{x} · {T.set_index('asset_id').asset_name[x]}", key="m")
+    a = c[0].selectbox("Asset", list(T.asset_id), format_func=lambda x: f"{x} · {T.set_index('asset_id').asset_name[x]}", key="m", help="Type to search. The list follows the Facilities and Asset types filters at the top.")
     s = c[1].selectbox("Sensor", ["All"] + SENSORS)
     truth = c[2].toggle("Show simulated fault periods", False, help="Orange bands mark the faults injected into the synthetic data. They are evaluation labels, not model output.")
     st.caption(f"{(as_of - pd.Timedelta(days=period)):%d %b} to {as_of:%d %b %Y}. Red dots are hours when the model flagged the asset as a whole (all four sensors together), so they appear on every chart, even where that sensor looks normal.")
@@ -292,7 +292,7 @@ with tabs[3]:
             show(px.line(w, x="timestamp", y=y, color="name", labels={"timestamp": "", y: unit, "name": ""}).update_layout(height=H, margin=dict(l=0, r=10, t=10, b=0), legend=dict(orientation="h", y=-0.15)),
                  alt=f"{title}, historical, per facility")
 with tabs[4]:
-    a = st.selectbox("Asset", list(T.asset_id), format_func=lambda x: f"{x} · {T.set_index('asset_id').asset_name[x]}", key="d")
+    a = st.selectbox("Asset", list(T.asset_id), format_func=lambda x: f"{x} · {T.set_index('asset_id').asset_name[x]}", key="d", help="Type to search. The list follows the Facilities and Asset types filters at the top.")
     row = T.set_index("asset_id").loc[a]
     with st.container(border=True):
         st.markdown(f"**{row.asset_name}** · {row.facility}")

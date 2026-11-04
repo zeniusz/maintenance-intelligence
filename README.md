@@ -39,6 +39,10 @@ Both versions are Streamlit apps on the same analysis (`mi/`), so the risk score
 | Acting on a signal | Cards and tables were read-only | Each Inspect next card has an **Investigate** button; rows in both priorities tables open the asset | One click from a signal to its evidence. |
 | Asset details | A 'right now' chart that seemed to contradict the 7-day peak | **7-day peak vs latest reading** side by side per sensor, with a plain-language caption | Explains how a recovering asset can still carry a high risk score. |
 | Sensor labels | 'Show injected truth' | 'Show simulated fault periods' | Plain wording for an evaluation setting. |
+| Data labels | A 'Delayed' badge that read like a failed refresh | 'Historical simulation · synthetic data' and 'Live weather', so the two sources are never confused | Customers shouldn't think a refresh failed. |
+| Tables | Nine or ten narrow columns, facility names cut off | Seven focused columns in Overview, wider facility column, full explanation only in the priorities tab | Scannable at a glance. |
+| Layout polish | Uneven KPI cards; large facility name competing with risk on Asset details | Equal-height KPI cards; facility shown as a small line; heatmap colour legend and shareable-link tip added | Consistent components and clear hierarchy. |
+| Finding an asset | Asset list with no hint about how it was narrowed | Tooltip: type to search; the list follows the Facilities and Asset types filters | Discoverable without a second picker. |
 | Small screens | Status badges wrapped over several lines | Badges stay on one line and stack cleanly on phones | Usable on a phone. |
 
 | Version 1 | Version 2 |
