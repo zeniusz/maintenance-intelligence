@@ -7,3 +7,14 @@ primaryColor = "#2dd4bf"
 backgroundColor = "#0b1220"
 secondaryBackgroundColor = "#111b2e"
 textColor = "#e5edf5"
+borderColor = "#1f2d44"
+baseRadius = "5px"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+headingFontSizes = ["1.6rem", "1.3rem", "1.05rem"]
+headingFontWeights = [600, 600, 600]
+# severity palette: used by :red[], :orange[], :green[] and st.badge
+redColor = "#ef4444"
+orangeColor = "#f59e0b"
+greenColor = "#14b8a6"
+dataframeBorderColor = "#1f2d44"
+dataframeHeaderBackgroundColor = "#111b2e"

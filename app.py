@@ -1,6 +1,4 @@
 """Maintenance Intelligence dashboard. Run: streamlit run app.py"""
-import itertools
-
 import pandas as pd
 import plotly.express as px
 import plotly.io as pio
@@ -11,29 +9,8 @@ from mi import pipeline as P
 from mi.data_gen import SENSORS
 from mi.weather import get_current
 
-_n = itertools.count()  # unique keys for styled card containers
 st.set_page_config("Maintenance Intelligence", ":material/monitoring:", layout="wide", initial_sidebar_state="collapsed")
-st.markdown("""<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-html, body, .stApp, button, input { font-family: 'Inter', sans-serif; }
-.block-container { padding: 3rem 2rem 2rem; max-width: 1600px; }
-h1 { font-size: 1.5rem !important; font-weight: 600 !important; padding: 0 !important; }
-h3 { font-size: 1rem !important; font-weight: 600 !important; padding: 0 0 .4rem !important; }
-[class*="st-key-card"] { background: #111b2e; border: 1px solid #1f2d44; border-radius: 5px; padding: .8rem 1rem; }
-[data-testid="stMetricLabel"] p { font-size: .75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; }
-[data-testid="stMetricValue"] { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 1.9rem; }
-[data-testid="stMetricValue"] > div { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.2; }
-button[data-baseweb="tab"][aria-selected="true"] { font-weight: 600; color: #2dd4bf; }
-[data-baseweb="tab-highlight"] { background: #2dd4bf; height: 2px; }
-[data-testid="stDataFrame"] { border: 1px solid #1f2d44; border-radius: 5px; overflow: hidden; }
-[data-testid="stPlotlyChart"] { background: #111b2e; border: 1px solid #1f2d44; border-radius: 5px; padding: .5rem; }
-[class*="st-key-card"] [data-testid="stPlotlyChart"] { background: transparent; border: 0; padding: 0; }
-.fresh { display: flex; gap: 1.5rem; justify-content: flex-end; font-size: .78rem; color: #94a3b8; line-height: 1.35; }
-.fresh b { color: #e5edf5; font-weight: 500; }
-.pill { white-space: nowrap; padding: 1px 8px; border-radius: 99px; font-size: .7rem; font-weight: 600; margin-right: .4rem; }
-.ok { background: #0f4c47; color: #5eead4; } .warn { background: #5a3d0a; color: #fbbf24; } .bad { background: #5a1414; color: #f87171; }
-@media (max-width: 640px) { .fresh { flex-direction: column; gap: .5rem; justify-content: flex-start; } .block-container { padding: 2.6rem 1rem 2rem; } }
-</style>""", unsafe_allow_html=True)
+st.markdown("<style>.block-container { padding: 3rem 2rem 2rem; max-width: 1600px; }</style>", unsafe_allow_html=True)  # no native setting for page padding
 pio.templates["mi"] = pio.templates["plotly_dark"]
 pio.templates["mi"].layout.update(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_family="Inter",
                                   margin=dict(l=10, r=30, t=40, b=10), title_font_size=14, hovermode="x unified")
@@ -117,17 +94,16 @@ def reset():
 # ---- Header: title left, data freshness right
 live_df, fetched = live(fac)
 now = pd.Timestamp.now("UTC")
-data_state = ("ok", "Current") if now - LAST.tz_localize("UTC") < pd.Timedelta(hours=2) else ("warn", "Delayed · demo snapshot")
-wx_state = ("ok", "Current") if not live_df.empty else ("bad", "Sync failed")
-h = st.columns([2.2, 3.2, 0.9], vertical_alignment="center")
+data_ok = now - LAST.tz_localize("UTC") < pd.Timedelta(hours=2)
+h = st.columns([2, 1.25, 1.25, 0.9], vertical_alignment="center")
 h[0].title("Maintenance Intelligence")
-h[1].markdown(
-    f"""<div class="fresh"><div><span class="pill {data_state[0]}">{data_state[1]}</span><br>Asset data as of <b>{LAST:%d %b %Y %H:%M}</b><br>
-    Pipeline run <b>{synced:%d %b %H:%M UTC}</b></div>
-    <div><span class="pill {wx_state[0]}">{wx_state[1]}</span><br>Weather (Open-Meteo, separate source)<br>
-    {'fetched <b>' + fetched.strftime('%d %b %H:%M UTC') + '</b>' if not live_df.empty else 'live feed unavailable'}</div></div>""",
-    unsafe_allow_html=True)
+with h[1]:
+    st.badge("Current" if data_ok else "Delayed · demo snapshot", color="green" if data_ok else "orange")
+    st.caption(f"Asset data as of **{LAST:%d %b %Y %H:%M}**  \nPipeline run **{synced:%d %b %H:%M UTC}**")
 with h[2]:
+    st.badge("Current" if not live_df.empty else "Sync failed", color="green" if not live_df.empty else "red")
+    st.caption("Weather (Open-Meteo, separate source)  \n" + (f"fetched **{fetched:%d %b %H:%M UTC}**" if not live_df.empty else "live feed unavailable"))
+with h[3]:
     if st.button("Refresh weather", width="stretch", help="Re-fetches live weather. Asset data is a fixed synthetic snapshot."):
         live.clear()
         st.rerun()
@@ -168,11 +144,11 @@ with tabs[0]:
             ("Critical assets", n_crit, f"{n_crit / len(T):.0%} of assets · risk > 40"),
             ("Average risk", f"{T.risk.mean():.1f}", "Scale 0-100 · as of risk date"),
             ("Model alerts", f"{n_alerts:,}", f"Alert-hours, last {period} days")]):
-        with col.container(border=True, key=f"card_{lbl[:5]}"):
+        with col.container(border=True):
             st.metric(lbl, val)
             st.caption(sub)
 
-    with st.container(border=True, key="card_prio"):
+    with st.container(border=True):
         st.subheader("Maintenance priorities")
         top = T.head(10).reset_index(drop=True)
         ss["prio_ids"] = list(top.asset_id)
@@ -184,7 +160,7 @@ with tabs[0]:
         st.caption("Ranked by risk score. Select a row to open that asset in Asset details.")
 
     c1, c2, c3 = st.columns([1.3, 1, 1.1])
-    with c1.container(border=True, key="card_map"):
+    with c1.container(border=True):
         st.subheader("Facility risk map")
         g = T.groupby(["facility", "facility_id"]).agg(avg_risk=("risk", "mean"), critical=("level", lambda x: (x == "High").sum()),
                                                         assets=("asset_id", "count")).reset_index().merge(fac, on="facility_id")
@@ -197,19 +173,19 @@ with tabs[0]:
                                        size_max=26, map_style="carto-darkmatter",
                                        labels={"avg_risk": "Avg risk", "critical": "Critical assets", "assets": "Assets", "now": "Weather now"})
                         .update_layout(height=H, margin=dict(l=0, r=0, t=0, b=0)), width="stretch")
-    with c2.container(border=True, key="card_fac"):
+    with c2.container(border=True):
         st.subheader("Average risk by facility")
         show(px.bar(g.sort_values("avg_risk"), x="avg_risk", y=g.sort_values("avg_risk").facility.str.split().str[0], orientation="h", text_auto=".1f", color="avg_risk",
                                color_continuous_scale=SCALE, range_color=(15, 45), labels={"avg_risk": "Average risk", "facility": ""})
                         .update_layout(height=H, coloraxis_showscale=False, yaxis_title=None, margin=dict(l=0, r=10, t=0, b=0)), width="stretch")
-    with c3.container(border=True, key="card_type"):
+    with c3.container(border=True):
         st.subheader("Risk by facility × asset type")
         hm = T.pivot_table(index="facility", columns="asset_type", values="risk", aggfunc="mean").round(0).rename(index=lambda s: s.split()[0], columns=lambda s: s.split()[-1])
         show(px.imshow(hm, text_auto=".0f", color_continuous_scale=SCALE, zmin=15, zmax=45, aspect="auto",
                                   labels={"color": "Avg risk", "x": "", "y": ""})
                         .update_xaxes(side="top").update_layout(height=H, coloraxis_showscale=False, margin=dict(l=0, r=0, t=0, b=0)), width="stretch")
 
-    with st.container(border=True, key="card_live"):
+    with st.container(border=True):
         st.subheader("Live conditions at facilities")
         if live_df.empty:
             st.info("Live weather feed unavailable right now. Historical/synthetic weather is still used by the model.")
@@ -268,7 +244,7 @@ with tabs[3]:
 with tabs[4]:
     a = st.selectbox("Asset", T.asset_id, format_func=lambda x: f"{x} · {T.set_index('asset_id').asset_name[x]}", key="d")
     row = T.set_index("asset_id").loc[a]
-    with st.container(border=True, key=f"card_{next(_n)}"):
+    with st.container(border=True):
         c = st.columns([1, 2.4, 1, 1])
         c[0].metric("Risk score", f"{row.risk:.1f}")
         c[0].markdown(TAG[row.level])
