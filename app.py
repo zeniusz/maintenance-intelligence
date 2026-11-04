@@ -30,8 +30,9 @@ button[data-baseweb="tab"][aria-selected="true"] { font-weight: 600; color: #2dd
 [class*="st-key-card"] [data-testid="stPlotlyChart"] { background: transparent; border: 0; padding: 0; }
 .fresh { display: flex; gap: 1.5rem; justify-content: flex-end; font-size: .78rem; color: #94a3b8; line-height: 1.35; }
 .fresh b { color: #e5edf5; font-weight: 500; }
-.pill { padding: 1px 8px; border-radius: 99px; font-size: .7rem; font-weight: 600; margin-right: .4rem; }
+.pill { white-space: nowrap; padding: 1px 8px; border-radius: 99px; font-size: .7rem; font-weight: 600; margin-right: .4rem; }
 .ok { background: #0f4c47; color: #5eead4; } .warn { background: #5a3d0a; color: #fbbf24; } .bad { background: #5a1414; color: #f87171; }
+@media (max-width: 640px) { .fresh { flex-direction: column; gap: .5rem; justify-content: flex-start; } .block-container { padding: 2.6rem 1rem 2rem; } }
 </style>""", unsafe_allow_html=True)
 pio.templates["mi"] = pio.templates["plotly_dark"]
 pio.templates["mi"].layout.update(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_family="Inter",
@@ -57,7 +58,8 @@ R, assets, fac = D["readings"], D["assets"], D["facilities"]
 COLORS = {"Low": "#14b8a6", "Medium": "#f59e0b", "High": "#ef4444"}  # teal / amber / red, always with a text label
 STATUS = {"Low": "Normal", "Medium": "Warning", "High": "Critical"}
 TAG = {"Low": ":green[Normal]", "Medium": ":orange[Warning]", "High": ":red[Critical]"}
-SCALE = [COLORS["Low"], COLORS["Medium"], COLORS["High"]]  # 15 -> 45 spans the Normal / Warning / Critical bands (25, 40)
+LO, HI = (25 - 15) / 30, (40 - 15) / 30  # Warning / Critical thresholds on the 15-45 colour range
+SCALE = [(0, COLORS["Low"]), (LO, COLORS["Low"]), (LO, COLORS["Medium"]), (HI, COLORS["Medium"]), (HI, COLORS["High"]), (1, COLORS["High"])]  # hard bands, not a blended gradient
 LAST = R.timestamp.max()
 H = 330  # standard chart height
 LBL = {"temperature_c": "Temperature (°C)", "vibration_mm_s": "Vibration (mm/s)", "pressure_bar": "Pressure (bar)", "power_kw": "Power (kW)"}
@@ -74,13 +76,21 @@ def sensor_fig(a, sensors, start, end, truth=True):
     fig = make_subplots(rows=len(sensors), cols=1, shared_xaxes=True, subplot_titles=[LBL[s] for s in sensors], vertical_spacing=0.08)
     ep = D["episodes"][(D["episodes"].asset_id == a) & (D["episodes"].end >= start) & (D["episodes"].start <= end)]
     for i, s in enumerate(sensors, 1):
-        fig.add_scatter(x=d.timestamp, y=d[s], mode="lines", line_width=1, name=s, showlegend=False, row=i, col=1)
+        fig.add_scatter(x=d.timestamp, y=d[s], mode="lines", line=dict(width=1, color="#94a3b8"), name=s, showlegend=False, row=i, col=1)
         al = d[d.alert]
         fig.add_scatter(x=al.timestamp, y=al[s], mode="markers", marker=dict(color=COLORS["High"], size=5),
                         name="Model alert", showlegend=i == 1, row=i, col=1)
         for e in ep.itertuples() if truth else []:
             fig.add_vrect(x0=e.start, x1=e.end, fillcolor="orange", opacity=0.2, line_width=0, row=i, col=1)
     return fig.update_layout(height=max(300, 230 * len(sensors)), margin=dict(t=30, b=10), legend_orientation="h")
+
+
+TINT = {"Critical": "background-color: rgba(239,68,68,.22); color: #fecaca", "Warning": "background-color: rgba(245,158,11,.2); color: #fde68a"}
+
+
+def tint(df, cols):
+    """Colour severity cells (text label stays, so colour is never the only cue)."""
+    return df.style.map(lambda v: TINT.get(v, ""), subset=cols)
 
 
 def reset():
@@ -149,11 +159,11 @@ with tabs[0]:
     with st.container(border=True, key="card_prio"):
         st.subheader("Maintenance priorities")
         top = T.head(10).reset_index(drop=True)
-        sel = st.dataframe(top.assign(rank=top.index + 1)[["rank", "asset_id", "asset_name", "facility", "driver_label", "peak_z", "risk", "status"]],
+        sel = st.dataframe(tint(top.assign(rank=top.index + 1)[["rank", "asset_id", "asset_name", "facility", "driver_label", "peak_z", "risk", "status"]], ["status"]),
                            hide_index=True, width="stretch", on_select="rerun", selection_mode="single-row", key="prio", column_config={
             "rank": st.column_config.NumberColumn("#", width="small"), "asset_id": "Asset ID", "asset_name": "Equipment", "facility": "Facility",
             "driver_label": "Main driver", "peak_z": st.column_config.NumberColumn("Peak deviation (σ)", format="%+.1f"),
-            "risk": st.column_config.ProgressColumn("Risk score", min_value=0, max_value=100, format="%.0f"), "status": "Severity"})
+            "risk": st.column_config.NumberColumn("Risk score (0-100)", format="%.0f"), "status": "Severity"})
         if sel.selection.rows:
             ss["d"] = top.asset_id[sel.selection.rows[0]]
             st.caption(f"**{ss['d']}**: {top.set_index('asset_id').explanation[ss['d']]}. Open the Asset Details tab for the full view.")
@@ -207,39 +217,41 @@ with tabs[0]:
                 "it does not estimate failure probability. The risk score blends anomalies with criticality and maintenance state to prioritise inspections.")
 
 with tabs[1]:
-    c = st.columns([2, 1, 1])
+    c = st.columns([2, 1, 1], vertical_alignment="bottom")
     a = c[0].selectbox("Asset", T.asset_id, format_func=lambda x: f"{x} · {T.set_index('asset_id').asset_name[x]}", key="m")
     s = c[1].selectbox("Sensor", ["All"] + SENSORS)
-    truth = c[2].checkbox("Show injected truth", False, help="Orange bands = synthetic fault episodes (evaluation labels)")
+    truth = c[2].toggle("Show injected truth", False, help="Orange bands = synthetic fault episodes (evaluation labels)")
     st.plotly_chart(sensor_fig(a, SENSORS if s == "All" else [s], as_of - pd.Timedelta(days=period), as_of, truth), width="stretch")
     st.caption("Red dots = Isolation Forest alerts. Idle (standby) hours show as low readings.")
 
 with tabs[2]:
-    n = int(st.number_input("Show top N assets", 1, len(T), min(15, len(T)), help=f"Shows the N highest-risk assets after filtering ({len(T)} match). Type a number or use +/-."))
+    n = int(st.columns([1, 4])[0].number_input("Show top N assets", 1, len(T), min(15, len(T)), help=f"Shows the N highest-risk assets after filtering ({len(T)} match). Type a number or use +/-."))
     top = T.head(n)
     cols = ["asset_id", "asset_type", "facility", "criticality", "driver_label", "peak_z", "risk", "status", "explanation"]
-    st.dataframe(top[cols].reset_index(drop=True), width="stretch", hide_index=True, height=min(740, 38 + 35 * n), column_config={
+    st.dataframe(tint(top[cols].reset_index(drop=True), ["status"]), width="stretch", hide_index=True, height=min(740, 38 + 35 * n), column_config={
         "asset_id": "Asset", "asset_type": "Type", "facility": "Facility", "criticality": "Criticality", "status": "Status",
         "driver_label": "Main driver", "peak_z": st.column_config.NumberColumn("Peak deviation (σ)", format="%+.1f"),
         "explanation": st.column_config.TextColumn("Why", width="large"),
-        "risk": st.column_config.ProgressColumn("Risk", min_value=0, max_value=100, format="%.1f")})
+        "risk": st.column_config.NumberColumn("Risk (0-100)", format="%.1f")})
     st.download_button("Download ranking (CSV)", top[cols].to_csv(index=False), "maintenance_priorities.csv")
     st.caption("risk = 100 × (0.5·sensor deviation + 0.3·alert share + 0.2·maintenance overdue) × criticality multiplier (0.7–1.0)")
 
 with tabs[3]:
     g = T.groupby("facility").agg(avg_risk=("risk", "mean"), critical=("level", lambda x: (x == "High").sum()),
-                                  alert_share=("alert_share", "mean"), assets=("asset_id", "count")).reset_index()
+                                  warning=("level", lambda x: (x == "Medium").sum()), alert_share=("alert_share", "mean"), assets=("asset_id", "count")).reset_index()
     a, b = st.columns(2)
-    a.plotly_chart(px.bar(g, x="facility", y="avg_risk", color="avg_risk", color_continuous_scale="OrRd", title="Average risk by facility"), width="stretch")
-    b.plotly_chart(px.imshow(T.pivot_table(index="facility", columns="asset_type", values="risk", aggfunc="mean").round(1),
-                             text_auto=True, color_continuous_scale="OrRd", title="Average risk: facility × asset type"), width="stretch")
-    st.dataframe(g.round(2), width="stretch", hide_index=True)
+    a.plotly_chart(px.bar(g.sort_values("avg_risk"), x="avg_risk", y="facility", orientation="h", text_auto=".1f", color="avg_risk", color_continuous_scale=SCALE, range_color=(15, 45),
+                          title="Average risk by facility", labels={"avg_risk": "Average risk (0-100)", "facility": ""}).update_traces(textfont_color="#0b1220").update_layout(height=H, coloraxis_showscale=False), width="stretch")
+    b.plotly_chart(px.imshow(T.pivot_table(index="facility", columns="asset_type", values="risk", aggfunc="mean").round(1), text_auto=True, color_continuous_scale=SCALE, zmin=15, zmax=45,
+                             title="Average risk: facility × equipment type", labels={"color": "Avg risk", "x": "", "y": ""}, aspect="auto").update_traces(textfont_color="#0b1220").update_layout(height=H, margin=dict(l=10, r=30, t=40, b=90)), width="stretch")
+    st.dataframe(g.round(2), width="stretch", hide_index=True, column_config={
+        "facility": "Facility", "avg_risk": st.column_config.NumberColumn("Average risk", format="%.1f"), "critical": "Critical", "warning": "Warning",
+        "alert_share": st.column_config.NumberColumn("Share of hours alerted", format="percent"), "assets": "Assets"})
     w = D["weather"].merge(fac[["facility_id", "name"]], on="facility_id")
     w = w[w.name.isin(fsel)].groupby(["name", pd.Grouper(key="timestamp", freq="D")])[["ambient_temp_c", "humidity_pct"]].mean().reset_index()
     a, b = st.columns(2)
-    a.plotly_chart(px.line(w, x="timestamp", y="ambient_temp_c", color="name", title="Daily ambient temperature (°C, historical)"), width="stretch")
-    b.plotly_chart(px.line(w, x="timestamp", y="humidity_pct", color="name", title="Daily relative humidity (%, historical)"), width="stretch")
-
+    a.plotly_chart(px.line(w, x="timestamp", y="ambient_temp_c", color="name", title="Daily ambient temperature (°C, historical)", labels={"timestamp": "", "ambient_temp_c": "°C", "name": ""}).update_layout(legend=dict(orientation="h", y=-0.2)), width="stretch")
+    b.plotly_chart(px.line(w, x="timestamp", y="humidity_pct", color="name", title="Daily relative humidity (%, historical)", labels={"timestamp": "", "humidity_pct": "%", "name": ""}).update_layout(legend=dict(orientation="h", y=-0.2)), width="stretch")
 with tabs[4]:
     a = st.selectbox("Asset", T.asset_id, format_func=lambda x: f"{x} · {T.set_index('asset_id').asset_name[x]}", key="d")
     row = T.set_index("asset_id").loc[a]

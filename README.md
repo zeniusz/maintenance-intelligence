@@ -28,6 +28,9 @@ Both versions are Streamlit apps on the same analysis (`mi/`), so the risk score
 | Sensor charts | Raw field names (`temperature_c`), default colours, injected-fault overlay always on | Names with units (Temperature (°C)), shared hover, light grid, fault overlay off by default | Operational view first; the evaluation overlay is opt-in. |
 | Asset details | Purple chart, large blue banner, and a "now" value that seemed to contradict the 7-day peak | Chart centred on zero with ±3σ limits, red only outside them; findings labelled "7 days to <date>" and the chart labelled "right now" | The two numbers measure different things and now say so. |
 | Styling | 10 px rounded boxes | 5 px corners and fewer nested borders | Less of the generic dashboard look. |
+| Severity colour | Teal progress bar even for Critical assets; severity word uncoloured | Severity cells tinted red/amber, with the word kept; charts use the same three fixed bands instead of a blended gradient | Colour now means the same everywhere and is never the only cue. |
+| Facility Comparison | Raw field names, a red/cream scale, slanted labels | Readable labels, horizontal bars, shared severity colours, formatted table | Consistent with the rest of the app. |
+| Small screens | Status badges wrapped over several lines | Badges stay on one line and stack cleanly on phones | Usable on a phone. |
 
 | Version 1 | Version 2 |
 |---|---|
