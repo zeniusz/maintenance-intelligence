@@ -32,6 +32,10 @@ Both versions are Streamlit apps on the same analysis (`mi/`), so the risk score
 | Facility Comparison | Raw field names, a red/cream scale, slanted labels | Readable labels, horizontal bars, shared severity colours, formatted table | Consistent with the rest of the app. |
 | Navigation | Select a row, then find and open the Asset Details tab yourself | Selecting a row opens that asset in Asset details; the active tab is saved in the URL so a link or reload keeps your place | Fewer steps, and views can be shared. |
 | Accessibility | Charts and tables without text descriptions | Every chart and table has an accessible description; sentence-case labels | Screen-reader users can identify each element. |
+| First screen | Four totals, then a table | **Inspect next**: the top three assets with severity, risk, change versus 7 days earlier and the reason; KPIs show change versus 7 days earlier | Answers what to inspect first, and whether it is getting worse. |
+| Sharing | Only the tab was in the link | Filters, risk date and selected asset are also in the link (?site=..&period=7&asset=A061) | A colleague opens the same view. |
+| Facility view | Average risk per facility, which hides a single bad asset | Count of critical and warning assets per facility, with averages kept in the table | One failing asset is no longer averaged away. |
+| Alert wording | Red dots on every sensor chart without explanation | Caption explains the model flags the whole asset, so dots appear on every chart | Avoids reading a sensor-specific fault into them. |
 | Small screens | Status badges wrapped over several lines | Badges stay on one line and stack cleanly on phones | Usable on a phone. |
 
 | Version 1 | Version 2 |

@@ -88,7 +88,7 @@ def open_asset():
 
 
 def reset():
-    st.session_state.update(fsel=[], tsel=[], period=30, asof=LAST.date())
+    st.session_state.update(fsel=[], tsel=[], period="30", asof=LAST.date())
 
 
 # ---- Header: title left, data freshness right
@@ -113,15 +113,27 @@ with h[3]:
                     f"({'/'.join(sorted(D['weather'].weather_source.unique()))}).  \n"
                     "**Alerts** = hours flagged by the Isolation Forest. **Critical** = risk score > 40 (Warning 25-40, Normal < 25).")
 
+# ---- Shareable view: filters and asset live in the URL (?site=..&type=..&period=7&date=2025-06-20&asset=A061)
+qp = st.query_params
+if "seeded" not in ss:
+    ss.seeded = True
+    ss.fsel, ss.tsel = [v for v in qp.get_all("site") if v in set(fac.name)], [v for v in qp.get_all("type") if v in set(assets.asset_type)]
+    if qp.get("period") in ("7", "30", "90"):
+        ss.period = qp["period"]
+    try:
+        ss.asof = max(min(pd.Timestamp(qp["date"]).date(), LAST.date()), (R.timestamp.min() + pd.Timedelta(days=8)).date())
+    except (KeyError, ValueError):
+        pass
+
 # ---- Filters: compact, collapsible
-n_active = bool(ss.get("fsel")) + bool(ss.get("tsel")) + (ss.get("period", 30) != 30) + (ss.get("asof", LAST.date()) != LAST.date())
+n_active = bool(ss.get("fsel")) + bool(ss.get("tsel")) + (ss.get("period", "30") != "30") + (ss.get("asof", LAST.date()) != LAST.date())
 with st.expander(f"Filters · {n_active} active" if n_active else "Filters · none active", icon=":material/tune:"):
     c = st.columns([2, 2, 1.4, 1.4, 0.8], vertical_alignment="bottom")
     # empty selection = no filter
     fsel = c[0].multiselect("Facilities", list(fac.name), key="fsel", placeholder="All facilities (type to search)") or list(fac.name)
     tsel = c[1].multiselect("Asset types", sorted(assets.asset_type.unique()), key="tsel",
                             placeholder="All asset types (type to search)") or sorted(assets.asset_type.unique())
-    period = c[2].segmented_control("Analysis period", [7, 30, 90], default=30, format_func=lambda d: f"{d} d", key="period") or 30
+    period = int((c[2].segmented_control("Analysis period", ["7", "30", "90"], default="30", format_func=lambda d: f"{d} d", key="period") or "30"))
     day = c[3].date_input("Risk assessment date", LAST.date(), min_value=(R.timestamp.min() + pd.Timedelta(days=8)).date(),
                           max_value=LAST.date(), key="asof", help="Risk is scored on the 7 days before this date. Default: latest data.")
     c[4].button("Reset all", on_click=reset, width="stretch")
@@ -133,30 +145,46 @@ if T.empty:
     st.warning("No assets match the filters.")
     st.stop()
 T = T.assign(status=T.level.map(STATUS), driver_label=T.driver.map(DRV))
+if "seeded_asset" not in ss:
+    ss.seeded_asset = True
+    if qp.get("asset") in set(T.asset_id):
+        ss.d = ss.m = qp["asset"]
 n_alerts = int(R.alert[R.asset_id.isin(T.asset_id) & (R.timestamp > as_of - pd.Timedelta(days=period)) & (R.timestamp <= as_of)].sum())
 n_crit = int((T.level == "High").sum())
+WEEK = pd.Timedelta(days=7)
+prev = risks(as_of - WEEK).set_index("asset_id") if as_of - WEEK >= R.timestamp.min() + pd.Timedelta(days=8) else None  # risk 7 days earlier, same assets
+T = T.assign(change=T.risk - T.asset_id.map(prev.risk) if prev is not None else float("nan"))
+n_crit_prev = int((prev.loc[prev.index.isin(T.asset_id), "level"] == "High").sum()) if prev is not None else None
+avg_prev = prev.loc[prev.index.isin(T.asset_id), "risk"].mean() if prev is not None else None
 
 tabs = st.tabs(["Overview", "Sensor monitoring", "Maintenance priorities", "Facility comparison", "Asset details"], key="tab", bind="query-params")
 
 with tabs[0]:
-    for col, (lbl, val, sub) in zip(st.columns(4), [
-            ("Assets monitored", len(T), f"Across {T.facility.nunique()} facilities"),
-            ("Critical assets", n_crit, f"{n_crit / len(T):.0%} of assets · risk > 40"),
-            ("Average risk", f"{T.risk.mean():.1f}", "Scale 0-100 · as of risk date"),
-            ("Model alerts", f"{n_alerts:,}", f"Alert-hours, last {period} days")]):
+    st.subheader("Inspect next")
+    for col, r in zip(st.columns(3), T.head(3).itertuples()):
         with col.container(border=True):
-            st.metric(lbl, val)
-            st.caption(sub)
+            st.badge(STATUS[r.level], color={"High": "red", "Medium": "orange", "Low": "green"}[r.level])
+            st.markdown(f"**{r.asset_id}** · {r.asset_name}  \n{r.facility}")
+            st.metric("Risk score", f"{r.risk:.0f}", None if pd.isna(r.change) else f"{r.change:+.1f} vs 7 d earlier", delta_color="inverse")
+            st.caption(r.explanation)
 
+    for col, (lbl, val, sub, delta) in zip(st.columns(4), [
+            ("Assets monitored", len(T), f"Across {T.facility.nunique()} facilities", None),
+            ("Critical assets", n_crit, f"{n_crit / len(T):.0%} of assets · risk > 40", None if n_crit_prev is None else ("No change vs 7 d earlier" if n_crit_prev == n_crit else f"{n_crit - n_crit_prev:+d} vs 7 d earlier")),
+            ("Average risk", f"{T.risk.mean():.1f}", "Scale 0-100", None if avg_prev is None else f"{T.risk.mean() - avg_prev:+.1f} vs 7 d earlier"),
+            ("Model alerts", f"{n_alerts:,}", f"Alert-hours, last {period} days", None)]):
+        with col.container(border=True):
+            st.metric(lbl, val, delta, delta_color="off" if delta and delta.startswith("No change") else "inverse", delta_arrow="off" if delta and delta.startswith("No change") else "auto")
+            st.caption(sub)
     with st.container(border=True):
         st.subheader("Maintenance priorities")
         top = T.head(10).reset_index(drop=True)
         ss["prio_ids"] = list(top.asset_id)
-        table(tint(top.assign(rank=top.index + 1)[["rank", "asset_id", "asset_name", "facility", "driver_label", "peak_z", "risk", "status"]], ["status"]),
+        table(tint(top.assign(rank=top.index + 1)[["rank", "asset_id", "asset_name", "facility", "driver_label", "peak_z", "risk", "change", "status"]], ["status"]),
                            hide_index=True, width="stretch", on_select=open_asset, selection_mode="single-row", key="prio", alt="Top 10 maintenance priorities, ranked by risk score. Select a row to open the asset.", column_config={
             "rank": st.column_config.NumberColumn("#", width="small"), "asset_id": "Asset ID", "asset_name": "Equipment", "facility": "Facility",
             "driver_label": "Main driver", "peak_z": st.column_config.NumberColumn("Peak deviation (σ)", format="%+.1f"),
-            "risk": st.column_config.NumberColumn("Risk score (0-100)", format="%.0f"), "status": "Severity"})
+            "risk": st.column_config.NumberColumn("Risk score (0-100)", format="%.0f"), "change": st.column_config.NumberColumn("Change vs 7 d", format="%+.1f"), "status": "Severity"})
         st.caption("Ranked by risk score. Select a row to open that asset in Asset details.")
 
     c1, c2, c3 = st.columns([1.3, 1, 1.1])
@@ -174,10 +202,12 @@ with tabs[0]:
                                        labels={"avg_risk": "Avg risk", "critical": "Critical assets", "assets": "Assets", "now": "Weather now"})
                         .update_layout(height=H, margin=dict(l=0, r=0, t=0, b=0)), width="stretch")
     with c2.container(border=True):
-        st.subheader("Average risk by facility")
-        show(px.bar(g.sort_values("avg_risk"), x="avg_risk", y=g.sort_values("avg_risk").facility.str.split().str[0], orientation="h", text_auto=".1f", color="avg_risk",
-                               color_continuous_scale=SCALE, range_color=(15, 45), labels={"avg_risk": "Average risk", "facility": ""})
-                        .update_layout(height=H, coloraxis_showscale=False, yaxis_title=None, margin=dict(l=0, r=10, t=0, b=0)), width="stretch")
+        st.subheader("Assets needing attention")
+        nc = T.assign(short=T.facility.str.split().str[0]).groupby(["short", "status"]).size().reset_index(name="assets")
+        nc = nc[nc.status != "Normal"]
+        show(px.bar(nc, x="assets", y="short", color="status", orientation="h", color_discrete_map={"Critical": COLORS["High"], "Warning": COLORS["Medium"]},
+                    category_orders={"status": ["Critical", "Warning"]}, labels={"assets": "Assets", "short": "", "status": ""})
+             .update_xaxes(dtick=1).update_layout(height=H, margin=dict(l=0, r=10, t=0, b=0), legend=dict(orientation="h", y=1.08)), alt="Number of critical and warning assets per facility")
     with c3.container(border=True):
         st.subheader("Risk by facility × asset type")
         hm = T.pivot_table(index="facility", columns="asset_type", values="risk", aggfunc="mean").round(0).rename(index=lambda s: s.split()[0], columns=lambda s: s.split()[-1])
@@ -207,19 +237,19 @@ with tabs[0]:
 
 with tabs[1]:
     c = st.columns([2, 1, 1], vertical_alignment="bottom")
-    a = c[0].selectbox("Asset", T.asset_id, format_func=lambda x: f"{x} · {T.set_index('asset_id').asset_name[x]}", key="m")
+    a = c[0].selectbox("Asset", list(T.asset_id), format_func=lambda x: f"{x} · {T.set_index('asset_id').asset_name[x]}", key="m")
     s = c[1].selectbox("Sensor", ["All"] + SENSORS)
     truth = c[2].toggle("Show injected truth", False, help="Orange bands = synthetic fault episodes (evaluation labels)")
     show(sensor_fig(a, SENSORS if s == "All" else [s], as_of - pd.Timedelta(days=period), as_of, truth), alt=f"Sensor readings for {a} over the last {period} days with model alerts")
-    st.caption("Red dots = Isolation Forest alerts. Idle (standby) hours show as low readings.")
+    st.caption("Red dots are hours when the model flagged the asset as a whole (all four sensors together), so they appear on every chart, even where that sensor looks normal. Standby hours read low.")
 
 with tabs[2]:
     n = int(st.columns([1, 4])[0].number_input("Show top N assets", 1, len(T), min(15, len(T)), help=f"Shows the N highest-risk assets after filtering ({len(T)} match). Type a number or use +/-."))
     top = T.head(n)
-    cols = ["asset_id", "asset_type", "facility", "criticality", "driver_label", "peak_z", "risk", "status", "explanation"]
+    cols = ["asset_id", "asset_type", "facility", "criticality", "driver_label", "peak_z", "risk", "change", "status", "explanation"]
     table(tint(top[cols].reset_index(drop=True), ["status"]), width="stretch", hide_index=True, height=min(740, 38 + 35 * n), alt="Maintenance priorities with driver, deviation, risk, severity and explanation", column_config={
         "asset_id": "Asset", "asset_type": "Type", "facility": "Facility", "criticality": "Criticality", "status": "Status",
-        "driver_label": "Main driver", "peak_z": st.column_config.NumberColumn("Peak deviation (σ)", format="%+.1f"),
+        "driver_label": "Main driver", "peak_z": st.column_config.NumberColumn("Peak deviation (σ)", format="%+.1f"), "change": st.column_config.NumberColumn("Change vs 7 d", format="%+.1f"),
         "explanation": st.column_config.TextColumn("Why", width="large"),
         "risk": st.column_config.NumberColumn("Risk (0-100)", format="%.1f")})
     st.download_button("Download ranking (CSV)", top[cols].to_csv(index=False), "maintenance_priorities.csv")
@@ -242,7 +272,7 @@ with tabs[3]:
         show(px.imshow(pv.rename(index=lambda s: s.split()[0], columns=lambda s: s.replace(" ", "<br>", 1)), text_auto=True, color_continuous_scale=SCALE, zmin=15, zmax=45,
                        labels={"color": "Avg risk", "x": "", "y": ""}, aspect="auto").update_traces(textfont_color="#0b1220")
              .update_xaxes(side="top", tickangle=0).update_layout(height=H, coloraxis_showscale=False, margin=dict(l=0, r=0, t=40, b=0)), alt="Average risk for each facility and equipment type")
-    table(g.round(2), alt="Facility summary: average risk, critical and warning assets, share of hours alerted", hide_index=True, column_config={
+    table(g.sort_values(["critical", "avg_risk"], ascending=False).round(2), alt="Facility summary: average risk, critical and warning assets, share of hours alerted", hide_index=True, column_config={
         "facility": "Facility", "avg_risk": st.column_config.NumberColumn("Average risk", format="%.1f"), "critical": "Critical", "warning": "Warning",
         "alert_share": st.column_config.NumberColumn("Share of hours alerted", format="percent"), "assets": "Assets"})
     w = D["weather"].merge(fac[["facility_id", "name"]], on="facility_id")
@@ -254,11 +284,11 @@ with tabs[3]:
             show(px.line(w, x="timestamp", y=y, color="name", labels={"timestamp": "", y: unit, "name": ""}).update_layout(height=H, margin=dict(l=0, r=10, t=10, b=0), legend=dict(orientation="h", y=-0.15)),
                  alt=f"{title}, historical, per facility")
 with tabs[4]:
-    a = st.selectbox("Asset", T.asset_id, format_func=lambda x: f"{x} · {T.set_index('asset_id').asset_name[x]}", key="d")
+    a = st.selectbox("Asset", list(T.asset_id), format_func=lambda x: f"{x} · {T.set_index('asset_id').asset_name[x]}", key="d")
     row = T.set_index("asset_id").loc[a]
     with st.container(border=True):
         c = st.columns([1, 2.4, 1, 1])
-        c[0].metric("Risk score", f"{row.risk:.1f}")
+        c[0].metric("Risk score", f"{row.risk:.1f}", None if pd.isna(row.change) else f"{row.change:+.1f} vs 7 d earlier", delta_color="inverse")
         c[0].markdown(TAG[row.level])
         c[1].metric("Facility", row.facility)
         c[2].metric("Criticality", f"{row.criticality}/5")
@@ -276,3 +306,11 @@ with tabs[4]:
     st.subheader("Maintenance history")
     mh = D["maint"][D["maint"].asset_id == a].sort_values("date", ascending=False).drop(columns=["asset_id"])
     table(mh.rename(columns=lambda x: x.replace("_eur", " (EUR)").replace("_", " ").capitalize()), alt="Maintenance history of the selected asset", hide_index=True)
+
+# ---- write the current view back to the URL so it can be shared
+for key, val in {"site": ss.get("fsel"), "type": ss.get("tsel"), "period": ss.get("period") if ss.get("period") != "30" else None,
+                 "date": str(day) if day != LAST.date() else None, "asset": ss.get("d") if ss.get("tab") == "Asset details" else None}.items():
+    if val:
+        qp[key] = val
+    elif key in qp:
+        del qp[key]
