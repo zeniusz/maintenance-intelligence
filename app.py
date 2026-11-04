@@ -101,10 +101,10 @@ data_ok = now - LAST.tz_localize("UTC") < pd.Timedelta(hours=2)
 h = st.columns([2, 1.25, 1.25, 0.9], vertical_alignment="center")
 h[0].title("Maintenance Intelligence")
 with h[1]:
-    st.badge("Current" if data_ok else "Delayed · demo snapshot", color="green" if data_ok else "orange")
+    st.badge("Live data" if data_ok else "Historical simulation · synthetic data", color="green" if data_ok else "blue")
     st.caption(f"Asset data as of **{LAST:%d %b %Y %H:%M}**  \nPipeline run **{synced:%d %b %H:%M UTC}**")
 with h[2]:
-    st.badge("Current" if not live_df.empty else "Sync failed", color="green" if not live_df.empty else "red")
+    st.badge("Live weather" if not live_df.empty else "Sync failed", color="green" if not live_df.empty else "red")
     st.caption("Weather (Open-Meteo, separate source)  \n" + (f"fetched **{fetched:%d %b %H:%M UTC}**" if not live_df.empty else "live feed unavailable"))
 with h[3]:
     if st.button("Refresh weather", width="stretch", help="Re-fetches live weather. Asset data is a fixed synthetic snapshot."):
@@ -114,7 +114,8 @@ with h[3]:
         st.markdown("**Asset data is fully synthetic** (100 fictional assets, 5 fictional facilities).  \n"
                     f"**Weather:** live conditions from the Open-Meteo forecast API; model history from the Open-Meteo archive "
                     f"({'/'.join(sorted(D['weather'].weather_source.unique()))}).  \n"
-                    "**Alerts** = hours flagged by the Isolation Forest. **Critical** = risk score > 40 (Warning 25-40, Normal < 25).")
+                    "**Alerts** = hours flagged by the Isolation Forest. **Critical** = risk score > 40 (Warning 25-40, Normal < 25).  \n"
+                    "**Sharing:** the page address holds your filters, tab and selected asset. Copy it to share this exact view.")
 
 # ---- Shareable view: filters and asset live in the URL (?site=..&type=..&period=7&date=2025-06-20&asset=A061)
 qp = st.query_params
@@ -177,16 +178,16 @@ with tabs[0]:
             ("Critical assets", n_crit, f"{n_crit / len(T):.0%} of assets · risk > 40", None if n_crit_prev is None else ("No change vs 7 d earlier" if n_crit_prev == n_crit else f"{n_crit - n_crit_prev:+d} vs 7 d earlier")),
             ("Average risk", f"{T.risk.mean():.1f}", "Scale 0-100", None if avg_prev is None else f"{T.risk.mean() - avg_prev:+.1f} vs 7 d earlier"),
             ("Model alerts", f"{n_alerts:,}", f"Alert-hours, last {period} days", None)]):
-        with col.container(border=True):
+        with col.container(border=True, height=185):
             st.metric(lbl, val, delta, delta_color="off" if delta and delta.startswith("No change") else "inverse", delta_arrow="off" if delta and delta.startswith("No change") else "auto")
             st.caption(sub)
     with st.container(border=True):
         st.subheader("Maintenance priorities")
         top = T.head(10).reset_index(drop=True)
         ss["prio_ids"] = list(top.asset_id)
-        table(tint(top.assign(rank=top.index + 1)[["rank", "asset_id", "asset_name", "facility", "driver_label", "peak_z", "risk", "change", "status"]], ["status"]),
+        table(tint(top.assign(rank=top.index + 1)[["asset_id", "asset_type", "facility", "driver_label", "risk", "change", "status"]], ["status"]),
                            hide_index=True, width="stretch", on_select=lambda: open_asset("prio"), selection_mode="single-row", key="prio", alt="Top 10 maintenance priorities, ranked by risk score. Select a row to open the asset.", column_config={
-            "rank": st.column_config.NumberColumn("#", width="small"), "asset_id": "Asset ID", "asset_name": "Equipment", "facility": "Facility",
+            "asset_id": st.column_config.TextColumn("Asset", width="small"), "asset_type": "Equipment", "facility": st.column_config.TextColumn("Facility", width="large"),
             "driver_label": "Main driver", "peak_z": st.column_config.NumberColumn("Peak deviation (σ)", format="%+.1f"),
             "risk": st.column_config.NumberColumn("Risk score (0-100)", format="%.0f"), "change": st.column_config.NumberColumn("Change vs 7 d", format="%+.1f"), "status": "Severity"})
         st.caption("Ranked by risk score. Select a row to open that asset in Asset details.")
@@ -218,6 +219,7 @@ with tabs[0]:
         show(px.imshow(hm, text_auto=".0f", color_continuous_scale=SCALE, zmin=15, zmax=45, aspect="auto",
                                   labels={"color": "Avg risk", "x": "", "y": ""})
                         .update_xaxes(side="top").update_layout(height=H, coloraxis_showscale=False, margin=dict(l=0, r=0, t=0, b=0)), width="stretch")
+        st.caption("Cell colour = average risk: teal below 25, amber 25 to 40, red above 40.")
 
     with st.container(border=True):
         st.subheader("Live conditions at facilities")
@@ -244,20 +246,21 @@ with tabs[1]:
     a = c[0].selectbox("Asset", list(T.asset_id), format_func=lambda x: f"{x} · {T.set_index('asset_id').asset_name[x]}", key="m")
     s = c[1].selectbox("Sensor", ["All"] + SENSORS)
     truth = c[2].toggle("Show simulated fault periods", False, help="Orange bands mark the faults injected into the synthetic data. They are evaluation labels, not model output.")
+    st.caption(f"{(as_of - pd.Timedelta(days=period)):%d %b} to {as_of:%d %b %Y}. Red dots are hours when the model flagged the asset as a whole (all four sensors together), so they appear on every chart, even where that sensor looks normal.")
     show(sensor_fig(a, SENSORS if s == "All" else [s], as_of - pd.Timedelta(days=period), as_of, truth), alt=f"Sensor readings for {a} over the last {period} days with model alerts")
-    st.caption("Red dots are hours when the model flagged the asset as a whole (all four sensors together), so they appear on every chart, even where that sensor looks normal. Standby hours read low.")
+    st.caption("Standby hours read low.")
 
 with tabs[2]:
     n = int(st.columns([1, 4])[0].number_input("Show top N assets", 1, len(T), min(15, len(T)), help=f"Shows the N highest-risk assets after filtering ({len(T)} match). Type a number or use +/-."))
     top = T.head(n)
-    cols = ["asset_id", "asset_type", "facility", "criticality", "driver_label", "peak_z", "risk", "change", "status", "explanation"]
+    cols = ["asset_id", "asset_type", "facility", "driver_label", "peak_z", "risk", "change", "status", "explanation"]
     ss["prio2_ids"] = list(top.asset_id)
     table(tint(top[cols].reset_index(drop=True), ["status"]), width="stretch", hide_index=True, height=min(740, 38 + 35 * n), on_select=lambda: open_asset("prio2"), selection_mode="single-row", key="prio2", alt="Maintenance priorities with driver, deviation, risk, severity and explanation. Select a row to open the asset.", column_config={
-        "asset_id": "Asset", "asset_type": "Type", "facility": "Facility", "criticality": "Criticality", "status": "Status",
+        "asset_id": st.column_config.TextColumn("Asset", width="small"), "asset_type": "Equipment", "facility": st.column_config.TextColumn("Facility", width="large"), "status": "Status",
         "driver_label": "Main driver", "peak_z": st.column_config.NumberColumn("Peak deviation (σ)", format="%+.1f"), "change": st.column_config.NumberColumn("Change vs 7 d", format="%+.1f"),
         "explanation": st.column_config.TextColumn("Why", width="large"),
         "risk": st.column_config.NumberColumn("Risk (0-100)", format="%.1f")})
-    st.download_button("Download ranking (CSV)", top[cols].to_csv(index=False), "maintenance_priorities.csv")
+    st.download_button("Download ranking (CSV)", top[cols + ["criticality"]].to_csv(index=False), "maintenance_priorities.csv")
     st.caption("Select a row to open that asset in Asset details. risk = 100 × (0.5·sensor deviation + 0.3·alert share + 0.2·maintenance overdue) × criticality multiplier (0.7–1.0)")
 
 with tabs[3]:
@@ -276,6 +279,7 @@ with tabs[3]:
         show(px.imshow(pv.rename(index=lambda s: s.split()[0], columns=lambda s: s.replace(" ", "<br>", 1)), text_auto=True, color_continuous_scale=SCALE, zmin=15, zmax=45,
                        labels={"color": "Avg risk", "x": "", "y": ""}, aspect="auto").update_traces(textfont_color="#0b1220")
              .update_xaxes(side="top", tickangle=0).update_layout(height=H, coloraxis_showscale=False, margin=dict(l=0, r=0, t=40, b=0)), alt="Average risk for each facility and equipment type")
+        st.caption("Cell colour = average risk of the assets in that cell: teal below 25, amber 25 to 40, red above 40.")
     table(g.sort_values(["critical", "avg_risk"], ascending=False).round(2), alt="Facility summary: average risk, critical and warning assets, share of hours alerted", hide_index=True, column_config={
         "facility": "Facility", "avg_risk": st.column_config.NumberColumn("Average risk", format="%.1f"), "critical": "Critical", "warning": "Warning",
         "alert_share": st.column_config.NumberColumn("Share of hours alerted", format="percent"), "assets": "Assets"})
@@ -291,12 +295,12 @@ with tabs[4]:
     a = st.selectbox("Asset", list(T.asset_id), format_func=lambda x: f"{x} · {T.set_index('asset_id').asset_name[x]}", key="d")
     row = T.set_index("asset_id").loc[a]
     with st.container(border=True):
-        c = st.columns([1, 2.4, 1, 1])
+        st.markdown(f"**{row.asset_name}** · {row.facility}")
+        c = st.columns(3)
         c[0].metric("Risk score", f"{row.risk:.1f}", None if pd.isna(row.change) else f"{row.change:+.1f} vs 7 d earlier", delta_color="inverse")
         c[0].markdown(TAG[row.level])
-        c[1].metric("Facility", row.facility)
-        c[2].metric("Criticality", f"{row.criticality}/5")
-        c[3].metric("Installed", int(row.install_year))
+        c[1].metric("Criticality", f"{row.criticality}/5")
+        c[2].metric("Installed", int(row.install_year))
     st.markdown(f"**Why flagged.** {row.explanation}.")
     w7 = R[(R.asset_id == a) & (R.timestamp > as_of - WEEK) & (R.timestamp <= as_of)]
     if not w7.empty:
