@@ -50,6 +50,9 @@ Both versions are Streamlit apps on the same analysis (`mi/`), so the risk score
 | Evidence in the priorities tab | A 'Why' column cut off at the table edge | Short table plus a readable 'Why each asset is flagged' list; the CSV keeps the full explanation and is dated | Nothing is clipped, and exports are reproducible. |
 | Is it still happening? | Peak and latest bars only | A sentence stating the latest reading, its timestamp, and the 7-day peak | No interpretation needed. |
 | Sensor monitoring | Four tall charts by default | Opens on the sensor driving that asset's risk; selected asset is kept in the shareable link | Less scrolling, and links reopen the same asset. |
+| Inspect next cards | Risk, change and a long semicolon-separated explanation in one block | Risk score and 7-day change on top, one divider, then the evidence as two key figures (main driver with its deviation, hours alerted); the long text moved to Asset details | Scannable in a second; one idea per zone. |
+| Tables | Rank missing, columns in an arbitrary order, change shown without colour | Rank, asset, equipment, site, risk, 7-day change (points, coloured), severity, then driver and peak; the risk formula moved into an expander | Columns follow the decision: what, where, how bad, why. |
+| Choosing an asset | A plain list of IDs, and 'Why flagged' shown even for healthy assets | Each option shows type, site, risk and severity, highest risk first; healthy assets say 'Reading summary (not flagged)'; optional comparison of up to 4 assets in Asset details and overlay of up to 4 assets on one sensor | The assets that need attention are at the top, and several can be reviewed together. |
 | Small screens | Status badges wrapped over several lines | Badges stay on one line and stack cleanly on phones | Usable on a phone. |
 
 | Version 1 | Version 2 |
