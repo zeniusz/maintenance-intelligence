@@ -50,3 +50,13 @@ Screenshots: [`screenshots/`](screenshots) (`v1-*` and `v2-*`).
 | Blended red-to-teal gradients | Three fixed bands (Normal, Warning, Critical) used by every chart and table |
 | Charts and tables without text descriptions | Every chart and table has an accessible description; sentence-case labels |
 | Header badges wrapping on phones | Compact layout; tested on a 390 px phone width |
+
+## Side by side
+
+| Version 1 | Version 2 |
+|---|---|
+| ![v1 overview](screenshots/v1-overview.png) | ![v2 overview](screenshots/v2-overview.png) |
+| ![v1 maintenance priorities](screenshots/v1-maintenance-priorities.png) | ![v2 maintenance priorities](screenshots/v2-maintenance-priorities.png) |
+| ![v1 asset details](screenshots/v1-asset-details.png) | ![v2 asset details](screenshots/v2-asset-details.png) |
+| ![v1 sensor monitoring](screenshots/v1-sensor-monitoring.png) | ![v2 sensor monitoring](screenshots/v2-sensor-monitoring.png) |
+| ![v1 facility comparison](screenshots/v1-facility-comparison.png) | ![v2 facility comparison](screenshots/v2-facility-comparison.png) |

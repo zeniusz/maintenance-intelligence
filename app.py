@@ -12,9 +12,9 @@ from mi.data_gen import SENSORS
 from mi.weather import get_current
 
 st.set_page_config("Maintenance Intelligence", ":material/monitoring:", layout="wide", initial_sidebar_state="collapsed")
-st.markdown("<style>.block-container { padding: 2.4rem 2rem 2rem; max-width: 1600px; } .st-key-top1 { border-left: 3px solid #ef4444; } @media (max-width: 768px) { .block-container { padding: 2.2rem .75rem 2rem; } }</style>", unsafe_allow_html=True)  # no native setting for page padding
+st.markdown("<style>.block-container { padding: 2.6rem 2rem 2rem; max-width: 1600px; } .st-key-top1 { border-left: 3px solid #ef4444; } @media (max-width: 768px) { .block-container { padding: 2.2rem .75rem 2rem; } }</style>", unsafe_allow_html=True)  # no native setting for page padding
 pio.templates["mi"] = pio.templates["plotly_dark"]
-pio.templates["mi"].layout.update(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_family="Inter",
+pio.templates["mi"].layout.update(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font_family="Inter", font_size=12,
                                   margin=dict(l=10, r=30, t=40, b=10), title_font_size=14, hovermode="x unified")
 pio.templates["mi"].layout.xaxis.update(showgrid=False)
 pio.templates["mi"].layout.yaxis.update(gridcolor="#233047", zeroline=False)
@@ -43,8 +43,9 @@ R, assets, fac = D["readings"], D["assets"], D["facilities"]
 COLORS = {"Low": "#14b8a6", "Medium": "#f59e0b", "High": "#ef4444"}  # teal / amber / red, always with a text label
 STATUS = {"Low": "Normal", "Medium": "Warning", "High": "Critical"}
 TAG = {"Low": ":green[Normal]", "Medium": ":orange[Warning]", "High": ":red[Critical]"}
+MUTED = {"Low": "#1f6f68", "Medium": "#8f6a22", "High": "#9b3b45"}  # deeper chart colours, same three bands; text on them stays light
 LO, HI = (25 - 15) / 30, (40 - 15) / 30  # Warning / Critical thresholds on the 15-45 colour range
-SCALE = [(0, COLORS["Low"]), (LO, COLORS["Low"]), (LO, COLORS["Medium"]), (HI, COLORS["Medium"]), (HI, COLORS["High"]), (1, COLORS["High"])]  # hard bands, not a blended gradient
+SCALE = [(0, MUTED["Low"]), (LO, MUTED["Low"]), (LO, MUTED["Medium"]), (HI, MUTED["Medium"]), (HI, MUTED["High"]), (1, MUTED["High"])]  # hard bands, not a blended gradient
 LAST = R.timestamp.max()
 H = 330  # standard chart height
 LBL = {"temperature_c": "Temperature (°C)", "vibration_mm_s": "Vibration (mm/s)", "pressure_bar": "Pressure (bar)", "power_kw": "Power (kW)"}
@@ -149,7 +150,7 @@ if "seeded" not in ss:
         pass
 
 # ---- Sites are always visible (empty = all sites; the line under the controls says exactly what is in view)
-fsel = st.multiselect("Sites", list(fac.name), key="fsel", label_visibility="collapsed", placeholder="All sites (select one or more to review them together)") or list(fac.name)
+fsel = st.multiselect("Sites", list(fac.name), key="fsel", label_visibility="collapsed", placeholder="All sites", help="Select one or more sites to review them together.") or list(fac.name)
 if ss.pop("stale_link", False):
     st.info("Some saved selections in this link are no longer available. The view has been updated.")
 n_active = bool(ss.get("tsel")) + (ss.get("period", "30") != "30") + (ss.get("asof", LAST.date()) != LAST.date())
@@ -194,20 +195,40 @@ def fmt_asset(x):
     return f"{x} · {_by_id.asset_type[x]} · {_by_id.facility[x].split()[0]} · risk {_by_id.risk[x]:.0f} ({_by_id.status[x]})"
 
 
-sites_txt = "All sites" if T.facility.nunique() == len(fac) else ", ".join(sorted(T.facility.unique()))
-st.caption(f"**In view:** {sites_txt} · {len(T)} assets · assessed {as_of:%d %b %Y}")
+def share(asset_id):
+    """Ready-made email for one asset: (message text, mailto URL). The link reopens the same sites, filters, window, date and asset."""
+    x = _by_id.loc[asset_id]
+    try:
+        base = st.context.url.split("?")[0]
+    except Exception:  # not available outside a browser session
+        base = ""
+    params = {"tab": "Asset details", "asset": asset_id, "date": str(day)}
+    if len(fsel) < len(fac):
+        params["site"] = fsel
+    if len(tsel) < assets.asset_type.nunique():
+        params["type"] = tsel
+    if period != 30:
+        params["period"] = str(period)
+    link = f"{base}?{urlencode(params, doseq=True)}" if base else ""
+    msg = (f"Asset: {x.asset_name} ({asset_id}), {x.facility}\n"
+           f"Severity: {x.status}, risk {x.risk:.1f}/100" + ("" if pd.isna(x.change) else f" ({x.change:+.1f} pts vs 7 days earlier)") + "\n"
+           f"Why: {x.explanation}\n"
+           f"Assessed: {as_of:%d %b %Y} (synthetic demo data)" + (f"\nOpen this view: {link}" if link else ""))
+    subject = f"{asset_id} {x.asset_type}: {x.status}, risk {x.risk:.0f}"
+    return msg, f"mailto:?subject={quote(subject)}&body={quote(msg.replace(chr(10), chr(13) + chr(10)))}"
+
+
 if ss.pop("asset_notice", False):
     st.info("The asset in this link is not in the current selection, so the highest-risk asset is shown instead.")
 tabs = st.tabs(["Overview", "Sensor monitoring", "Maintenance priorities", "Facility comparison", "Asset details"], key="tab", bind="query-params")
 
 with tabs[0]:
     st.subheader("Inspect next")
-    st.caption("Risk score is a 0 to 100 priority index for ranking inspections. It is not a probability of failure.")
     flagged = T[T.level != "Low"].head(3)  # only assets that actually need attention
     if flagged.empty:
         st.success("No assets are flagged in this view: every asset is Normal (risk 25 or less).")
     for i, (col, r) in enumerate(zip(st.columns(3), flagged.itertuples())):
-        with col.container(border=True, gap="xsmall", key="top1" if i == 0 else None):  # the highest-ranked asset gets a subtle accent edge
+        with col.container(border=True, gap="xxsmall", key="top1" if i == 0 else None):  # the highest-ranked asset gets a subtle accent edge
             top_l, top_r = st.columns([1, 2], vertical_alignment="center")
             top_l.badge(STATUS[r.level], color={"High": "red", "Medium": "orange", "Low": "green"}[r.level])
             top_r.caption(r.facility)
@@ -218,7 +239,10 @@ with tabs[0]:
             left, right = st.columns(2)
             left.markdown(f":gray[Main driver]  \n**{r.driver_label} {r.peak_z:+.1f}σ**")
             right.markdown(f":gray[Hours alerted (last 7 d)]  \n**{r.alert_share:.0%}**")
-            st.button("Investigate", key=f"go_{r.asset_id}", on_click=go, args=(r.asset_id,), icon=":material/arrow_forward:", width="stretch")
+            b_go, b_mail = st.columns([3, 2])
+            b_go.button("Investigate", key=f"go_{r.asset_id}", on_click=go, args=(r.asset_id,), icon=":material/arrow_forward:", width="stretch")
+            b_mail.link_button("Email", share(r.asset_id)[1], icon=":material/mail:", width="stretch",
+                               help="Opens your email app with a ready-made message about this asset and a link to it. Nothing is sent automatically; you choose the recipient.")
 
     for col, (lbl, val, sub, delta) in zip(st.columns(4), [
             ("Assets assessed", len(T), f"Across {T.facility.nunique()} facilities", None),
@@ -263,7 +287,7 @@ with tabs[0]:
         if nc.empty:
             st.caption("No critical or warning assets in this view.")
         else:
-            show(px.bar(nc, x="assets", y="short", color="status", orientation="h", color_discrete_map={"Critical": COLORS["High"], "Warning": COLORS["Medium"]},
+            show(px.bar(nc, x="assets", y="short", color="status", orientation="h", color_discrete_map={"Critical": MUTED["High"], "Warning": MUTED["Medium"]},
                         category_orders={"status": ["Critical", "Warning"]}, labels={"assets": "Assets", "short": "", "status": ""})
                  .update_xaxes(dtick=1).update_layout(height=H, margin=dict(l=0, r=10, t=0, b=0), legend=dict(orientation="h", y=1.08)), alt="Number of critical and warning assets per facility")
     with c3.container(border=True):
@@ -356,13 +380,13 @@ with tabs[3]:
             st.caption("No critical or warning assets in this view.")
         else:
             show(px.bar(nc, x="assets", y="facility", color="status", orientation="h", text_auto=True,
-                        color_discrete_map={"Critical": COLORS["High"], "Warning": COLORS["Medium"]}, category_orders={"status": ["Critical", "Warning"]}, labels={"assets": "Assets", "facility": "", "status": ""})
-                 .update_traces(textfont_color="#0b1220").update_xaxes(dtick=1).update_layout(height=H, margin=dict(l=0, r=10, t=0, b=0), legend=dict(orientation="h", y=1.08)), alt="Number of critical and warning assets per facility")
+                        color_discrete_map={"Critical": MUTED["High"], "Warning": MUTED["Medium"]}, category_orders={"status": ["Critical", "Warning"]}, labels={"assets": "Assets", "facility": "", "status": ""})
+                 .update_traces(textfont_color="#f1f5f9").update_xaxes(dtick=1).update_layout(height=H, margin=dict(l=0, r=10, t=0, b=0), legend=dict(orientation="h", y=1.08)), alt="Number of critical and warning assets per facility")
     with b.container(border=True):
         st.subheader("Average risk by facility and equipment type")
         pv = T.pivot_table(index="facility", columns="asset_type", values="risk", aggfunc="mean").round(1)
         show(px.imshow(pv.rename(index=lambda s: s.split()[0], columns=lambda s: s.replace(" ", "<br>", 1)), text_auto=True, color_continuous_scale=SCALE, zmin=15, zmax=45,
-                       labels={"color": "Avg risk", "x": "", "y": ""}, aspect="auto").update_traces(textfont_color="#0b1220")
+                       labels={"color": "Avg risk", "x": "", "y": ""}, aspect="auto").update_traces(textfont_color="#f1f5f9")
              .update_xaxes(side="top", tickangle=0).update_layout(height=H, coloraxis_showscale=False, margin=dict(l=0, r=0, t=40, b=0)), alt="Average risk for each facility and equipment type")
         st.caption("Cell colour = average risk of the assets in that cell: teal 25 or below, amber above 25 to 40, red above 40.")
     table(g.sort_values(["critical", "avg_risk"], ascending=False).round(2), alt="Facility summary: average risk, critical and warning assets, share of hours alerted", hide_index=True, column_config={
@@ -388,26 +412,24 @@ with tabs[4]:
         c[1].metric("Criticality", f"{row.criticality}/5")
         c[2].metric("Installed", int(row.install_year))
     st.markdown(f"**{'Why flagged' if row.level != 'Low' else 'Reading summary (not flagged)'}.** {row.explanation}.")
-    try:
-        base = st.context.url.split("?")[0]
-    except Exception:  # not available outside a browser session
-        base = ""
-    params = {"tab": "Asset details", "asset": a, "date": str(day)}  # everything needed to reopen the same view
-    if len(fsel) < len(fac):
-        params["site"] = fsel
-    if len(tsel) < assets.asset_type.nunique():
-        params["type"] = tsel
-    if period != 30:
-        params["period"] = str(period)
-    link = f"{base}?{urlencode(params, doseq=True)}" if base else ""
-    msg = (f"Asset: {row.asset_name} ({a}), {row.facility}\n"
-           f"Severity: {row.status}, risk {row.risk:.1f}/100" + ("" if pd.isna(row.change) else f" ({row.change:+.1f} pts vs 7 days earlier)") + "\n"
-           f"Why: {row.explanation}\n"
-           f"Assessed: {as_of:%d %b %Y} (synthetic demo data)" + (f"\nOpen this view: {link}" if link else ""))
+    w7 = R[(R.asset_id == a) & (R.timestamp > as_of - WEEK) & (R.timestamp <= as_of)]
+    if not w7.empty:
+        peak = w7[P.RC].apply(lambda s: s.loc[s.abs().idxmax()] if s.notna().any() else float("nan"))
+        last = w7[P.RC].iloc[-1]
+        lw, pw = last.abs().idxmax(), f"zr_{row.driver}"  # pw = the asset's main driver, the same sensor the cards and tables report
+        with st.container(border=True):  # the most important diagnostic result comes first
+            st.subheader("Condition trend")
+            if abs(last[lw]) > 3:
+                st.markdown(f":red[**Still abnormal.**] The latest reading is outside the ±3σ normal range: {DRV[lw[3:]]} {last[lw]:+.1f}σ.")
+            elif abs(peak[pw]) > 3:
+                st.markdown(f":orange[**Eased since the peak.**] The main driver, {DRV[pw[3:]]}, reached {peak[pw]:+.1f}σ in the last 7 days; the latest reading is back within the normal range ({DRV[pw[3:]]} {last[pw]:+.1f}σ).")
+            else:
+                st.markdown(f":green[**Within the normal range.**] Main driver in the last 7 days: {DRV[pw[3:]]}, peak {peak[pw]:+.1f}σ.")
+            st.caption(f"Latest = 6-hour mean ending {as_of:%d %b %Y %H:%M} (the end of the assessed period, not today). Normal range = within ±3σ of the asset's own baseline.")
+    msg, mailto = share(a)
     c_share = st.columns([1, 3])
-    c_share[0].link_button("Compose email", f"mailto:?subject={quote(f'{a} {row.asset_type}: {row.status}, risk {row.risk:.0f}')}&body={quote(msg.replace(chr(10), chr(13) + chr(10)))}", icon=":material/mail:", width="stretch",
+    c_share[0].link_button("Compose email", mailto, icon=":material/mail:", width="stretch",
                            help="Opens your email app with a ready-made message. Nothing is sent automatically, and you choose the recipient.")
-    c_share[0].caption("Opens your email app. You choose the recipient and send.")
     with c_share[1].expander("Copy the message text instead"):
         st.code(msg, language=None)
     ss["cmp"] = [x for x in ss.get("cmp", []) if x in set(T.asset_id) and x != a]
@@ -420,20 +442,7 @@ with tabs[4]:
                   "asset_id": "Asset", "asset_type": "Equipment", "facility": st.column_config.TextColumn("Facility", width="large"), "risk": st.column_config.NumberColumn("Risk score", format="%.1f"),
                   "change": st.column_config.NumberColumn("7-day change (pts)", format="%+.1f"), "status": "Severity", "driver_label": "Main driver",
                   "peak_z": st.column_config.NumberColumn("Peak deviation (σ)", format="%+.1f"), "days_since_maint": st.column_config.NumberColumn("Days since maintenance", format="%d")})
-    w7 = R[(R.asset_id == a) & (R.timestamp > as_of - WEEK) & (R.timestamp <= as_of)]
     if not w7.empty:
-        peak = w7[P.RC].apply(lambda s: s.loc[s.abs().idxmax()] if s.notna().any() else float("nan"))
-        last = w7[P.RC].iloc[-1]
-        lw, pw = last.abs().idxmax(), f"zr_{row.driver}"  # pw = the asset's main driver, the same sensor the cards and tables report
-        with st.container(border=True):
-            st.subheader("Condition trend")
-            if abs(last[lw]) > 3:
-                st.markdown(f":red[**Still abnormal.**] The latest reading is outside the ±3σ normal range: {DRV[lw[3:]]} {last[lw]:+.1f}σ.")
-            elif abs(peak[pw]) > 3:
-                st.markdown(f":orange[**Eased since the peak.**] The main driver, {DRV[pw[3:]]}, reached {peak[pw]:+.1f}σ in the last 7 days; the latest reading is back within the normal range ({DRV[pw[3:]]} {last[pw]:+.1f}σ).")
-            else:
-                st.markdown(f":green[**Within the normal range.**] Main driver in the last 7 days: {DRV[pw[3:]]}, peak {peak[pw]:+.1f}σ.")
-            st.caption(f"Latest = 6-hour mean ending {as_of:%d %b %Y %H:%M} (the end of the assessed period, not today). Normal range = within ±3σ of the asset's own baseline.")
         z = pd.DataFrame({"Sensor": [DRV[c[3:]] for c in P.RC] * 2, "Deviation (σ)": list(peak) + list(last),
                           "Reading": ["Peak, last 7 days"] * 4 + [f"Latest (6 h mean to {as_of:%d %b %H:%M})"] * 4})
         show(px.bar(z, x="Deviation (σ)", y="Sensor", color="Reading", orientation="h", barmode="group",

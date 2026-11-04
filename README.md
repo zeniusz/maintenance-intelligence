@@ -37,6 +37,19 @@ Severity is always colour **and** word: **Normal** (risk 25 or less), **Warning*
 
 Same analysis, redesigned interface: a compact header, structured cards, a **Condition trend** statement, readable tables, a shared selected asset, shareable links, honest empty and error states, and a native Streamlit theme. Every change and the reason for it: **[docs/design-changes.md](docs/design-changes.md)**.
 
+## Screenshots
+
+| Asset details | Maintenance priorities |
+|---|---|
+| ![Asset details](docs/screenshots/v2-asset-details.png) | ![Maintenance priorities](docs/screenshots/v2-maintenance-priorities.png) |
+| **Sensor monitoring** | **Facility comparison** |
+| ![Sensor monitoring](docs/screenshots/v2-sensor-monitoring.png) | ![Facility comparison](docs/screenshots/v2-facility-comparison.png) |
+
+**On a phone (390 px wide)**
+
+| Overview | Asset details |
+|---|---|
+| <img src="docs/screenshots/v2-phone-overview.png" width="260" alt="Overview on a phone"> | <img src="docs/screenshots/v2-phone-asset-details.png" width="260" alt="Asset details on a phone"> |
 ## Walkthrough: one investigation in about 90 seconds
 
 1. **Overview:** the header says the data is a *historical simulation*. *Inspect next* shows the three assets that need attention.
