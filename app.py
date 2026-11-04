@@ -393,15 +393,22 @@ with tabs[4]:
         base = st.context.url.split("?")[0]
     except Exception:  # not available outside a browser session
         base = ""
-    link = base + "?" + urlencode({"tab": "Asset details", "asset": a, "date": str(day), **({"site": fsel} if len(fsel) < len(fac) else {})}, doseq=True)
+    params = {"tab": "Asset details", "asset": a, "date": str(day)}  # everything needed to reopen the same view
+    if len(fsel) < len(fac):
+        params["site"] = fsel
+    if len(tsel) < assets.asset_type.nunique():
+        params["type"] = tsel
+    if period != 30:
+        params["period"] = str(period)
+    link = f"{base}?{urlencode(params, doseq=True)}" if base else ""
     msg = (f"Asset: {row.asset_name} ({a}), {row.facility}\n"
            f"Severity: {row.status}, risk {row.risk:.1f}/100" + ("" if pd.isna(row.change) else f" ({row.change:+.1f} pts vs 7 days earlier)") + "\n"
            f"Why: {row.explanation}\n"
-           f"Assessed: {as_of:%d %b %Y} (synthetic demo data)\n"
-           f"Open this view: {link}")
+           f"Assessed: {as_of:%d %b %Y} (synthetic demo data)" + (f"\nOpen this view: {link}" if link else ""))
     c_share = st.columns([1, 3])
-    c_share[0].link_button("Share by email", f"mailto:?subject={quote(f'{a} {row.asset_type}: {row.status}, risk {row.risk:.0f}')}&body={quote(msg)}", icon=":material/mail:", width="stretch",
+    c_share[0].link_button("Compose email", f"mailto:?subject={quote(f'{a} {row.asset_type}: {row.status}, risk {row.risk:.0f}')}&body={quote(msg.replace(chr(10), chr(13) + chr(10)))}", icon=":material/mail:", width="stretch",
                            help="Opens your email app with a ready-made message. Nothing is sent automatically, and you choose the recipient.")
+    c_share[0].caption("Opens your email app. You choose the recipient and send.")
     with c_share[1].expander("Copy the message text instead"):
         st.code(msg, language=None)
     ss["cmp"] = [x for x in ss.get("cmp", []) if x in set(T.asset_id) and x != a]

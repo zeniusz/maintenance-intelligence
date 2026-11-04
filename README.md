@@ -54,7 +54,7 @@ Both versions are Streamlit apps on the same analysis (`mi/`), so the risk score
 | Tables | Rank missing, columns in an arbitrary order, change shown without colour | Rank, asset, equipment, site, risk, 7-day change (points, coloured), severity, then driver and peak; the risk formula moved into an expander | Columns follow the decision: what, where, how bad, why. |
 | Choosing an asset | A plain list of IDs, and 'Why flagged' shown even for healthy assets | Each option shows type, site, risk and severity, highest risk first; healthy assets say 'Reading summary (not flagged)'; optional comparison of up to 4 assets in Asset details and overlay of up to 4 assets on one sensor | The assets that need attention are at the top, and several can be reviewed together. |
 | Honest empty and edge states | 'Inspect next' always listed three assets, even if all were Normal; empty charts could crash; a shared link to an unavailable asset silently changed asset | Only flagged assets appear in 'Inspect next', with a clear message when none are; empty charts show a note; an unavailable asset in a link triggers a notice; no chart is drawn without readings; the 7-day and 30-day windows are labelled | The screen never implies a problem that is not there. |
-| Telling someone | No way to pass an asset on | 'Share by email' on Asset details opens your email app with a ready-made message (asset, severity, risk, reason, date, link to the same view); a 'Copy the message text instead' box is the fallback | Nothing is sent automatically and no recipients are invented; real notifications are listed under adoption gaps. |
+| Telling someone | No way to pass an asset on | 'Compose email' on Asset details opens your email app with a ready-made message (asset, severity, risk, reason, date, and a link that restores the same sites, filters, window and asset); a 'Copy the message text instead' box is the fallback | Nothing is sent automatically and no recipients are invented; real notifications are listed under adoption gaps. |
 | Small screens | Status badges wrapped over several lines | Badges stay on one line and stack cleanly on phones | Usable on a phone. |
 
 | Version 1 | Version 2 |
@@ -161,7 +161,7 @@ See [docs/data_dictionary.md](docs/data_dictionary.md) and [docs/architecture.md
 4. **Better models:** compare autoencoders or per-asset-type models, using a proper validation window.
 5. **Operations:** scheduled refresh, alert notifications, Docker deployment, and a button to mark an alert as a false alarm so the system learns from it.
 ## Not in the demo (adoption gaps)
-These are intentionally not faked: recording who reviewed or acknowledged an alert, review history, team permissions, scheduled shift reports, facility-level reports beyond the CSV exports, automatic notifications or messaging to responsible people (the demo only offers a manual share-by-email), integration with a maintenance system, and validation of the risk score on real plant data. The score ranks assets for inspection; it is not a failure prediction.
+These are intentionally not faked: recording who reviewed or acknowledged an alert, review history, team permissions, scheduled shift reports, facility-level reports beyond the CSV exports, automatic notifications or messaging to responsible people (the demo only offers a manual compose-email), integration with a maintenance system, and validation of the risk score on real plant data. The score ranks assets for inspection; it is not a failure prediction.
 
 ## Limitations
 
